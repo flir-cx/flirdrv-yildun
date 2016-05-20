@@ -50,9 +50,6 @@ typedef struct __FVD_DEV_INFO {
 	void (*pBSPFvdPowerUp) (struct __FVD_DEV_INFO * pDev);
 	void (*pBSPFvdPowerDown) (struct __FVD_DEV_INFO * pDev);
 
-	// Locks
-	struct semaphore muDevice;
-
 	// CPU specific parameters
 	int iSpiBus;
 	int iSpiCountDivisor;

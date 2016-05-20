@@ -19,6 +19,7 @@
 #include "yildun.h"
 #include <linux/platform_device.h>
 #include <linux/of.h>
+#include <yildundev.h>
 
 static long Yildun_IOControl(struct file *filep,
 						  unsigned int cmd,
@@ -33,9 +34,6 @@ static DWORD DoIOControl(PFVD_DEV_INFO pDev,
 static PFVD_DEV_INFO pDev;
 static int __init Yildun_Init(void);
 static void Yildun_Deinit(void);
-static int Yildun_LoadFirmware(void);
-static int Yildun_powerdown(struct platform_device *dev,
-			  int enable);
 
 static struct file_operations yildun_fops =
 {
@@ -123,19 +121,8 @@ static int __init Yildun_Init(void)
 		goto OUT_DEVICECREATE;
 	}
 
-	sema_init(&pDev->muDevice, 1);
-	pDev->pBSPFvdPowerUp(pDev);
-	retval = Yildun_LoadFirmware();
-	if (retval) {
-		pr_err("Yildun_Loadfirmware failure\n");
-		goto OUT_LOADFIRMWARE;
-	}
-	pr_info("Yildun Firmware loaded\n");
+	return 0;
 
-	return retval;
-
-OUT_LOADFIRMWARE:
-	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 OUT_DEVICECREATE:
 	class_destroy(pDev->fvd_class);
 	pDev->pCleanupGpio(pDev);
@@ -164,53 +151,14 @@ OUT_NOMEM:
 static void Yildun_Deinit(void)
 {
 	pr_debug("Yildun_Deinit\n");
-	Yildun_powerdown(pDev->pLinuxDevice, 1);
 	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 	class_destroy(pDev->fvd_class);
 	platform_device_unregister(pDev->pLinuxDevice);
-	pDev->pBSPFvdPowerDown(pDev);
 	cdev_del(&pDev->yildun_cdev);
 	unregister_chrdev_region(pDev->yildun_dev, 1);
 	pDev->pCleanupGpio(pDev);
 	kfree(pDev);
 	pDev = NULL;
-}
-
-/** 
- * Load firmware for Yildun Device, check for errors during
- * spi transfer, check that FPGA becomes loaded and ready
- * 
- * @return 0 on success
- * @return negative on error
- */
-static int Yildun_LoadFirmware(void)
-{
-	int retval;
-
-	down(&pDev->muDevice);
-	retval = LoadFPGA(pDev);
-	up(&pDev->muDevice);
-	return retval;
-}
-
-/** 
- * enable/disable the viewfinder
- * 
- * @param enable 
- * 
- * @return 
- */
-static int Yildun_powerdown(struct platform_device *dev, int enable)
-{
-	PFVD_DEV_INFO pDev;
-	pDev = platform_get_drvdata(dev);
-
-	if (enable) {
-//		gpio_set_value(pDev->pwdn, 1);
-	} else {
-//		gpio_set_value(pDev->pwdn, 0);
-	}
-	return 0;
 }
 
 /**
@@ -281,12 +229,28 @@ DWORD DoIOControl(PFVD_DEV_INFO pDev,
 		  PUCHAR pBuf,
 		  PUCHAR pUserBuf)
 {
-	DWORD  dwErr = ERROR_INVALID_PARAMETER;
+	DWORD  dwErr = ERROR_SUCCESS;
+	static int enabled;
 
 	switch (Ioctl)
 	{
+	case IOCTL_YILDUN_ENABLE:
+		if (!enabled) {
+			pDev->pBSPFvdPowerUp(pDev);
+			dwErr = LoadFPGA(pDev);
+			enabled = TRUE;
+		}
+		break;
+
+	case IOCTL_YILDUN_DISABLE:
+		if (enabled) {
+			pDev->pBSPFvdPowerDown(pDev);
+			enabled = FALSE;
+		}
+		break;
+
 	default:
-		dwErr = ERROR_NOT_SUPPORTED;
+		dwErr = -ERROR_NOT_SUPPORTED;
 		break;
 	}
 	return dwErr;
