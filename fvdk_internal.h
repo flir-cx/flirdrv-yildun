@@ -29,9 +29,8 @@
 
 // this structure keeps track of the device instance
 typedef struct __FVD_DEV_INFO {
-	struct device_node *node;
-	struct device *dev;
 	// Linux driver variables
+	struct device *dev;
 	struct platform_device *pLinuxDevice;
 	struct cdev yildun_cdev;	// Linux character device
 	dev_t yildun_dev;		// Major.Minor device number
@@ -61,8 +60,6 @@ typedef struct __FVD_DEV_INFO {
 	int fpga_status;
 	int spi_sclk_gpio;
 	int spi_mosi_gpio;
-	int spi_miso_gpio;
-	int spi_cs_gpio;
 
 	// Regulators
 	struct regulator *reg_1v1_fpga;
@@ -70,6 +67,12 @@ typedef struct __FVD_DEV_INFO {
 	struct regulator *reg_1v8_fpga;
 	struct regulator *reg_2v5_fpga;
 	struct regulator *reg_3v15_fpga;
+
+	// Pinmux
+	struct pinctrl          *pinctrl;
+	struct pinctrl_state    *pins_default;
+	struct pinctrl_state    *pins_sleep;
+
 } FVD_DEV_INFO, *PFVD_DEV_INFO;
 
 #endif				/* __FVD_INTERNAL_H__ */

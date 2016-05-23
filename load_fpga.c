@@ -10,10 +10,11 @@
 #define ERROR_NO_CONFIG_DONE    10002
 #define ERROR_NO_SETUP          10003
 #define ERROR_NO_SPI            10004
-#define FW_DIR ""
-#define FW_FILE "yildun.bin"
+#define FW_DIR 			"FLIR/"
+#define FW_FILE 		"yildun.bin"
+#define SPI_MIN 		64
 
-#define MEASURE_TIMING 1
+#define MEASURE_TIMING		0
 
 static const struct firmware *pFW;
 
@@ -99,10 +100,11 @@ struct spi_board_info chip = {
 int LoadFPGA(PFVD_DEV_INFO pDev)
 {
 	int retval = 0;
-	unsigned long size;
+	unsigned long isize, osize;
 	unsigned char *fpgaBin;
 	struct spi_master *pspim;
 	struct spi_device *pspid;
+	ULONG *buf=0;
 #ifdef MEASURE_TIMING
 	struct timeval t[6];
 
@@ -110,7 +112,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 #endif
 
 	// read file
-	fpgaBin = getFPGAData(pDev, &size, pDev->fpga);
+	fpgaBin = getFPGAData(pDev, &isize, pDev->fpga);
 	if (fpgaBin == NULL) {
 		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Error reading fpgadata file\n");
 		retval = -ERROR_IO_DEVICE;
@@ -121,37 +123,46 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	do_gettimeofday(&t[1]);
 #endif
 
+	// Allocate a buffer suitable for DMA
+	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
+	buf = kmalloc(osize, GFP_KERNEL | GFP_DMA);
+	if (!buf) {
+		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Error allocating buf\n");
+		retval = -ENOMEM;
+		goto ERROR;
+	}
+
 	// swap bit and byte order
 	if (((GENERIC_FPGA_T *) (pDev->fpga))->LSBfirst) {
-		ULONG *ptr = (ULONG *) fpgaBin;
-		int len = (size + 3) / 4;
+		ULONG *iptr = (ULONG *) fpgaBin;
+		ULONG *optr = buf;
+		int len = (isize + 3) / 4;
 		static const char reverseNibble[16] = { 0x00, 0x08, 0x04, 0x0C,	// 0, 1, 2, 3
 			0x02, 0x0A, 0x06, 0x0E,	// 4, 5, 6, 7
 			0x01, 0x09, 0x05, 0x0D,	// 8, 9, A, B
 			0x03, 0x0B, 0x07, 0x0F};// C, D, E, F
 
 		while (len--) {
-			ULONG tmp = *ptr;
-			*ptr = reverseNibble[tmp >> 28] |
-			    (reverseNibble[(tmp >> 24) & 0x0F] << 4) |
-			    (reverseNibble[(tmp >> 20) & 0x0F] << 8) |
-			    (reverseNibble[(tmp >> 16) & 0x0F] << 12) |
-			    (reverseNibble[(tmp >> 12) & 0x0F] << 16) |
-			    (reverseNibble[(tmp >> 8) & 0x0F] << 20) |
-			    (reverseNibble[(tmp >> 4) & 0x0F] << 24) |
-			    (reverseNibble[tmp & 0x0F] << 28);
-			ptr++;
+			ULONG tmp = *iptr++;
+			*optr++ = reverseNibble[tmp >> 28] |
+				(reverseNibble[(tmp >> 24) & 0x0F] << 4) |
+				(reverseNibble[(tmp >> 20) & 0x0F] << 8) |
+				(reverseNibble[(tmp >> 16) & 0x0F] << 12) |
+				(reverseNibble[(tmp >> 12) & 0x0F] << 16) |
+				(reverseNibble[(tmp >> 8) & 0x0F] << 20) |
+				(reverseNibble[(tmp >> 4) & 0x0F] << 24) |
+				(reverseNibble[tmp & 0x0F] << 28);
 		}
 	} else {
-		ULONG *ptr = (ULONG *) fpgaBin;
-		int len = (size + 3) / 4;
+		ULONG *iptr = (ULONG *) fpgaBin;
+		ULONG *optr = buf;
+		int len = (isize + 3) / 4;
 
 		while (len--) {
-			ULONG tmp = *ptr;
-			*ptr = (tmp >> 24) |
+			ULONG tmp = *iptr++;
+			*optr++ = (tmp >> 24) |
 			    ((tmp >> 8) & 0xFF00) |
 			    ((tmp << 8) & 0xFF0000) | (tmp << 24);
-			ptr++;
 		}
 	}
 
@@ -162,7 +173,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	// Put FPGA in programming mode
 	retval = pDev->pPutInProgrammingMode(pDev);
 	if (retval == 0) {
-		msleep(5);
+		msleep(10);
 		if (pDev->pPutInProgrammingMode(pDev) == 0) {
 			dev_err(&pDev->pLinuxDevice->dev,
 					"LoadFPGA: Failed to set FPGA in programming mode\n");
@@ -192,9 +203,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	pspid->bits_per_word = 32;
 	retval = spi_setup(pspid);
 
-	retval = spi_write(pspid, fpgaBin,
-			   ((size / pDev->iSpiCountDivisor) +
-			    pDev->iSpiCountDivisor - 1) & ~3);
+	retval = spi_write(pspid, buf, osize / pDev->iSpiCountDivisor);
 
 	device_unregister(&pspid->dev);
 	put_device(&pspim->dev);
@@ -220,11 +229,12 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		tms(t[4]) - tms(t[3]),
 		tms(t[5]) - tms(t[4]));
 #endif
-
+	kfree(buf);
 	freeFpgaData();
 	return 0;
 
- ERROR:
+ERROR:
+	kfree(buf);
 	freeFpgaData();
 	return retval;
 }

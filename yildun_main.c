@@ -235,14 +235,19 @@ DWORD DoIOControl(PFVD_DEV_INFO pDev,
 	switch (Ioctl)
 	{
 	case IOCTL_YILDUN_ENABLE:
+		pr_debug("IOCTL_YILDUN_ENABLE\n");
 		if (!enabled) {
 			pDev->pBSPFvdPowerUp(pDev);
 			dwErr = LoadFPGA(pDev);
-			enabled = TRUE;
+			if (dwErr)
+				pDev->pBSPFvdPowerDown(pDev);
+			else
+				enabled = TRUE;
 		}
 		break;
 
 	case IOCTL_YILDUN_DISABLE:
+		pr_debug("IOCTL_YILDUN_DISABLE\n");
 		if (enabled) {
 			pDev->pBSPFvdPowerDown(pDev);
 			enabled = FALSE;
