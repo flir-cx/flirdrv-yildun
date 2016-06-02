@@ -35,11 +35,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	struct device *dev = &pDev->pLinuxDevice->dev;
 	int ret;
 
-	pr_err("SetupGpioAccessMX6S A %p\n", dev->of_node);
-
 	dev->of_node = of_find_compatible_node(NULL, NULL, "flir,yildun");
-
-	pr_err("SetupGpioAccessMX6S B %p\n", dev->of_node);
 
 	if (IS_ERR(dev->of_node)) {
 		dev_err(dev, "unable to get flir,yildun device tree\n");
