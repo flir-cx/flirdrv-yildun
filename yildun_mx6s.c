@@ -151,13 +151,15 @@ BOOL GetPinStatusMX6S(PFVD_DEV_INFO pDev)
 
 DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 {
+	int tmo=10;
+
 	// Set idle state (probably already done)
 	gpio_set_value(pDev->fpga_config, 1);
-	msleep(1);
+	usleep_range(1000, 2000);
 
 	// Activate programming (CONFIG  LOW)
 	gpio_set_value(pDev->fpga_config, 0);
-	msleep(1);
+	usleep_range(1000, 2000);
 
 	// Verify status
 	if (GetPinStatusMX6S(pDev)) {
@@ -171,7 +173,14 @@ DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 	}
 	// Release config
 	gpio_set_value(pDev->fpga_config, 1);
-	msleep(1);
+	usleep_range(2000, 5000);
+
+	// Wait for POR to complete
+	while (tmo--) {
+		if (GetPinStatusMX6S(pDev))
+			break;
+		usleep_range(5000, 20000);
+	}
 
 	// Verify status
 	if (!GetPinStatusMX6S(pDev)) {
@@ -211,13 +220,13 @@ void BSPFvdPowerUpMX6S(PFVD_DEV_INFO pDev)
 	ret |= regulator_enable(pDev->reg_1v8_fpga);
 	ret |= regulator_enable(pDev->reg_1v1_fpga);
 
-	msleep(10);
+	usleep_range(10000, 20000);
 
 	// Release Config
 	gpio_set_value(pDev->fpga_ce, 0);
 	gpio_set_value(pDev->fpga_config, 1);
 
-	msleep(10);
+	usleep_range(10000, 20000);
 }
 
 /** 
