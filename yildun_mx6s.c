@@ -46,7 +46,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	pDev->fpga_ce = of_get_named_gpio(dev->of_node, "fpga2-ce-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_ce)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_ce,
-				GPIOF_OUT_INIT_HIGH, "FPGA2 CE");
+				GPIOF_OUT_INIT_LOW, "FPGA2 CE");
 		if (ret) {
 			dev_err(dev, "unable to get FPGA2 CE gpio\n");
 		}
@@ -68,7 +68,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	pDev->fpga_config = of_get_named_gpio(dev->of_node, "fpga2-config-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_config)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_config,
-				GPIOF_OUT_INIT_HIGH, "FPGA2 CONFIG");
+				GPIOF_OUT_INIT_LOW, "FPGA2 CONFIG");
 		if (ret) {
 			dev_err(dev, "unable to get FPGA2 CONFIG gpio\n");
 		}
@@ -128,15 +128,24 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	if(IS_ERR(pDev->pins_sleep))
 		dev_err(dev,"can't get sleep pins %p %p", pDev->pinctrl, pDev->pins_sleep);
 
+	// Yildun initial state shall be off to prevent leakage
+	// if standby entered without prior use of Yildun
+	pinctrl_select_state(pDev->pinctrl, pDev->pins_sleep);
+
+	if (gpio_request(pDev->spi_sclk_gpio, "SPI2_SCLK"))
+		dev_err(&pDev->pLinuxDevice->dev,"SPI2_SCLK can not be requested\n");
+	else
+		gpio_direction_input(pDev->spi_sclk_gpio);
+	if (gpio_request(pDev->spi_mosi_gpio, "SPI2_MOSI"))
+		dev_err(&pDev->pLinuxDevice->dev,"SPI2_MOSI can not be requested\n");
+	else
+		gpio_direction_input(pDev->spi_mosi_gpio);
+
 	return TRUE;
 }
 
 void CleanupGpioMX6S(PFVD_DEV_INFO pDev)
 {
-	gpio_free(pDev->fpga_ce);
-	gpio_free(pDev->fpga_conf_done);
-	gpio_free(pDev->fpga_config);
-	gpio_free(pDev->fpga_status);
 }
 
 BOOL GetPinDoneMX6S(PFVD_DEV_INFO pDev)
@@ -200,15 +209,9 @@ DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 void BSPFvdPowerUpMX6S(PFVD_DEV_INFO pDev)
 {
 	int ret;
-	static bool init;
 
-	// Restore SPI
-	if (!init)
-		init = true;
-	else {
-		gpio_free(pDev->spi_sclk_gpio);
-		gpio_free(pDev->spi_mosi_gpio);
-	}
+	gpio_free(pDev->spi_sclk_gpio);
+	gpio_free(pDev->spi_mosi_gpio);
 
 	// Set SPI as SPI
 	ret = pinctrl_select_state(pDev->pinctrl, pDev->pins_default);
