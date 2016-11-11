@@ -1,0 +1,10 @@
+*.o
+*.cmd
+.cproject
+.project
+.tmp_versions
+*.symvers
+*.order
+*.ko
+*~
+*.mod.c
