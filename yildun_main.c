@@ -20,6 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <yildundev.h>
+#include <linux/dma-mapping.h>
 
 static long Yildun_IOControl(struct file *filep,
 						  unsigned int cmd,
@@ -96,6 +97,15 @@ static int __init Yildun_Init(void)
 		goto OUT_PLATFORMDEVICEADD;
 	}
 
+	pDev->pLinuxDevice->dev.dma_mask = kmalloc(sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
+	if (pDev->pLinuxDevice->dev.dma_mask == NULL) {
+		pr_err("Error allocating dma mask\n");
+		retval = -ENOMEM;
+		goto OUT_NODMAMASK;
+	}
+	*pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32);
+	pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+
 	platform_set_drvdata(pDev->pLinuxDevice, pDev);
 
 	retval = SetupMX6S(pDev);
@@ -129,6 +139,8 @@ OUT_DEVICECREATE:
 OUT_CLASSCREATE:
 OUT_SETUPMX6Q:
 	platform_device_del(pDev->pLinuxDevice);
+OUT_NODMAMASK:
+	kfree(pDev->pLinuxDevice->dev.dma_mask);
 OUT_PLATFORMDEVICEADD:
 	platform_device_put(pDev->pLinuxDevice);
 OUT_PLATFORMDEVICEALLOC:

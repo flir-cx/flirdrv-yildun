@@ -5,6 +5,7 @@
 #include "linux/firmware.h"
 #include <linux/platform_device.h>
 #include <linux/ipu-v3.h>
+#include <linux/dma-mapping.h>
 
 #define ERROR_NO_INIT_OK        10001
 #define ERROR_NO_CONFIG_DONE    10002
@@ -105,6 +106,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	struct spi_master *pspim;
 	struct spi_device *pspid;
 	ULONG *buf=0;
+	dma_addr_t phy;
 #ifdef MEASURE_TIMING
 	struct timeval t[6];
 
@@ -125,7 +127,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 
 	// Allocate a buffer suitable for DMA
 	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
-	buf = kmalloc(osize, GFP_KERNEL | GFP_DMA);
+	buf = dma_alloc_coherent(&pDev->pLinuxDevice->dev, osize, &phy, GFP_DMA | GFP_KERNEL);
 	if (!buf) {
 		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Error allocating buf\n");
 		retval = -ENOMEM;
@@ -177,8 +179,8 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		if (pDev->pPutInProgrammingMode(pDev) == 0) {
 			dev_err(&pDev->pLinuxDevice->dev,
 					"LoadFPGA: Failed to set FPGA in programming mode\n");
-			freeFpgaData();
-			return -ERROR_NO_SETUP;
+	        retval = -ERROR_NO_SETUP;
+	        goto ERROR;
 		}
 	}
 
@@ -229,12 +231,10 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		tms(t[4]) - tms(t[3]),
 		tms(t[5]) - tms(t[4]));
 #endif
-	kfree(buf);
-	freeFpgaData();
-	return 0;
-
+	retval = 0;
 ERROR:
-	kfree(buf);
+	if (buf)
+		dma_free_coherent(&pDev->pLinuxDevice->dev, osize, buf, phy);
 	freeFpgaData();
 	return retval;
 }
