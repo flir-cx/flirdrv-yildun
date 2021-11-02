@@ -15,7 +15,7 @@
 #define FW_FILE 		"yildun.bin"
 #define SPI_MIN 		64
 
-#define MEASURE_TIMING		0
+//#define MEASURE_TIMING
 
 static const struct firmware *pFW;
 
