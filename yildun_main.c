@@ -57,10 +57,9 @@ static int __init Yildun_Init(void)
 
 	// Allocate (and zero-initiate) our control structure.
 	pDev = (PFVD_DEV_INFO) kzalloc(sizeof(FVD_DEV_INFO), GFP_KERNEL);
-	if (pDev == NULL) {
-		pr_err("Error allocating memory for pDev, Yildun_Init failed\n");
-		goto OUT_NOMEM;
-	}
+	if (!pDev)
+		return -ENOMEM;
+
 	// Register linux driver
 	i = alloc_chrdev_region(&pDev->yildun_dev, 0, 1, "yildun");
 
@@ -138,9 +137,9 @@ OUT_DEVICECREATE:
 	pDev->pCleanupGpio(pDev);
 OUT_CLASSCREATE:
 OUT_SETUPMX6Q:
-	platform_device_del(pDev->pLinuxDevice);
-OUT_NODMAMASK:
 	kfree(pDev->pLinuxDevice->dev.dma_mask);
+OUT_NODMAMASK:
+	platform_device_del(pDev->pLinuxDevice);
 OUT_PLATFORMDEVICEADD:
 	platform_device_put(pDev->pLinuxDevice);
 OUT_PLATFORMDEVICEALLOC:
@@ -152,7 +151,6 @@ OUT_NODEV:
 OUT_NOCHRDEV:
 	kfree(pDev);
 	pDev = NULL;
-OUT_NOMEM:
 	return retval;
 }
 
@@ -202,6 +200,9 @@ static long Yildun_IOControl(struct file *filep,
 	char *tmp;
 
 	tmp = kzalloc(_IOC_SIZE(cmd), GFP_KERNEL);
+	if (!tmp)
+		return -ENOMEM;
+
 	if (_IOC_DIR(cmd) & _IOC_WRITE)
 	{
 		dwErr = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
