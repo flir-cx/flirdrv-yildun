@@ -1,16 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /***********************************************************************
  *
  * Project: Balthazar
- * $Date$
- * $Author$
- *
- * $Id$
  *
  * Description of file:
  *	Yildun FPGA control file
  *
  * Last check-in changelist:
- * $Change$
  *
  * Copyright: FLIR Systems AB.  All rights reserved.
  *
@@ -36,8 +32,7 @@ static PFVD_DEV_INFO pDev;
 static int __init Yildun_Init(void);
 static void Yildun_Deinit(void);
 
-static struct file_operations yildun_fops =
-{
+static const struct file_operations yildun_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = Yildun_IOControl,
 	.open = Yildun_Open,
@@ -53,8 +48,8 @@ static int __init Yildun_Init(void)
 {
 	int retval = -1;
 	int i;
-	pr_info("Yildun Init\n");
 
+	pr_info("Yildun Init\n");
 	// Allocate (and zero-initiate) our control structure.
 	pDev = (PFVD_DEV_INFO) kzalloc(sizeof(FVD_DEV_INFO), GFP_KERNEL);
 	if (!pDev)
@@ -63,7 +58,7 @@ static int __init Yildun_Init(void)
 	// Register linux driver
 	i = alloc_chrdev_region(&pDev->yildun_dev, 0, 1, "yildun");
 
-	if (i){
+	if (i) {
 		pr_err("Error allocating chrdev region\n");
 		retval = -3;
 		goto OUT_NOCHRDEV;
@@ -73,13 +68,13 @@ static int __init Yildun_Init(void)
 	pDev->yildun_cdev.owner = THIS_MODULE;
 	pDev->yildun_cdev.ops = &yildun_fops;
 	i = cdev_add(&pDev->yildun_cdev, pDev->yildun_dev, 1);
-	if (i){
+	if (i) {
 		pr_err("Error adding device driver\n");
 		retval = -3;
 		goto OUT_NODEV;
 	}
 	pDev->pLinuxDevice = platform_device_alloc("yildun", 1);
-	if (pDev->pLinuxDevice == NULL){
+	if (pDev->pLinuxDevice == NULL) {
 		pr_err("Error adding allocating device\n");
 		retval = -4;
 		goto OUT_NODEVALLOC;
@@ -98,7 +93,6 @@ static int __init Yildun_Init(void)
 
 	pDev->pLinuxDevice->dev.dma_mask = kmalloc(sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
 	if (pDev->pLinuxDevice->dev.dma_mask == NULL) {
-		pr_err("Error allocating dma mask\n");
 		retval = -ENOMEM;
 		goto OUT_NODMAMASK;
 	}
@@ -119,10 +113,10 @@ static int __init Yildun_Init(void)
 		goto OUT_CLASSCREATE;
 	}
 
-	pDev->dev = device_create(pDev->fvd_class, 
-				  NULL, 
+	pDev->dev = device_create(pDev->fvd_class,
+				  NULL,
 				  pDev->yildun_dev,
-				  NULL, 
+				  NULL,
 				  "yildun");
 
 	if (!pDev->pSetupGpioAccess(pDev)) {
@@ -160,7 +154,6 @@ OUT_NOCHRDEV:
  */
 static void Yildun_Deinit(void)
 {
-	pr_debug("Yildun_Deinit\n");
 	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 	class_destroy(pDev->fvd_class);
 	platform_device_unregister(pDev->pLinuxDevice);
@@ -179,19 +172,19 @@ static void Yildun_Deinit(void)
  *
  * @return
  */
-static int Yildun_Open (struct inode *inode, struct file *filp)
+static int Yildun_Open(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
-/** 
+/**
  * Yildun_IOControl
- * 
- * @param filep 
- * @param cmd 
- * @param arg 
- * 
- * @return 
+ *
+ * @param filep
+ * @param cmd
+ * @param arg
+ *
+ * @return
  */
 static long Yildun_IOControl(struct file *filep,
 		unsigned int cmd, unsigned long arg)
@@ -203,22 +196,19 @@ static long Yildun_IOControl(struct file *filep,
 	if (!tmp)
 		return -ENOMEM;
 
-	if (_IOC_DIR(cmd) & _IOC_WRITE)
-	{
+	if (_IOC_DIR(cmd) & _IOC_WRITE) {
 		dwErr = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
 		if (dwErr)
 			pr_err("Yildun: Copy from user failed: %ld\n", dwErr);
 	}
 
-	if (dwErr == ERROR_SUCCESS)
-	{
+	if (dwErr == ERROR_SUCCESS) {
 		dwErr = DoIOControl(pDev, cmd, tmp, (PUCHAR)arg);
 		if (dwErr)
 			pr_err("Yildun Ioctl %X failed: %ld\n", cmd, dwErr);
 	}
 
-	if ((dwErr == ERROR_SUCCESS) && (_IOC_DIR(cmd) & _IOC_READ))
-	{
+	if ((dwErr == ERROR_SUCCESS) && (_IOC_DIR(cmd) & _IOC_READ)) {
 		dwErr = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
 		if (dwErr)
 			pr_err("Yildun: Copy to user failed: %ld\n", dwErr);
@@ -227,15 +217,15 @@ static long Yildun_IOControl(struct file *filep,
 	return dwErr;
 }
 
-/** 
+/**
  * DoIOControl
- * 
- * @param pDev 
- * @param Ioctl 
- * @param pBuf 
- * @param pUserBuf 
- * 
- * @return 
+ *
+ * @param pDev
+ * @param Ioctl
+ * @param pBuf
+ * @param pUserBuf
+ *
+ * @return
  */
 DWORD DoIOControl(PFVD_DEV_INFO pDev,
 		  DWORD  Ioctl,
@@ -245,8 +235,7 @@ DWORD DoIOControl(PFVD_DEV_INFO pDev,
 	DWORD  dwErr = ERROR_SUCCESS;
 	static int enabled;
 
-	switch (Ioctl)
-	{
+	switch (Ioctl) {
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
 		if (!enabled) {
