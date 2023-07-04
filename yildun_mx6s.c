@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include "flir_kernel_os.h"
 #include "fvdk_internal.h"
 #include <linux/of_gpio.h>
@@ -47,97 +48,93 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	if (gpio_is_valid(pDev->fpga_ce)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_ce,
 				GPIOF_OUT_INIT_LOW, "FPGA2 CE");
-		if (ret) {
+		if (ret)
 			dev_err(dev, "unable to get FPGA2 CE gpio\n");
-		}
 	} else {
-		dev_err(dev,"can't get gpio fpga2-ce-gpio");
+		dev_err(dev, "can't get gpio fpga2-ce-gpio");
 	}
 
 	pDev->fpga_conf_done = of_get_named_gpio(dev->of_node, "fpga2-conf-done-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_conf_done)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_conf_done,
 				GPIOF_IN, "FPGA2 CONF_DONE");
-		if (ret) {
+		if (ret)
 			dev_err(dev, "unable to get FPGA2 CONF_DONE gpio\n");
-		}
 	} else {
-		dev_err(dev,"can't get gpio fpga2-conf-done-gpio");
+		dev_err(dev, "can't get gpio fpga2-conf-done-gpio");
 	}
 
 	pDev->fpga_config = of_get_named_gpio(dev->of_node, "fpga2-config-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_config)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_config,
 				GPIOF_OUT_INIT_LOW, "FPGA2 CONFIG");
-		if (ret) {
+		if (ret)
 			dev_err(dev, "unable to get FPGA2 CONFIG gpio\n");
-		}
 	} else {
-		dev_err(dev,"can't get gpio fpga2-config-gpio");
+		dev_err(dev, "can't get gpio fpga2-config-gpio");
 	}
 
 	pDev->fpga_status = of_get_named_gpio(dev->of_node, "fpga2-status-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_status)) {
 		ret = devm_gpio_request_one(dev, pDev->fpga_status,
 				GPIOF_IN, "FPGA2 STATUS");
-		if (ret) {
+		if (ret)
 			dev_err(dev, "unable to get FPGA2 STATUS gpio\n");
-		}
 	} else {
-		dev_err(dev,"can't get gpio fpga2-status-gpio");
+		dev_err(dev, "can't get gpio fpga2-status-gpio");
 	}
 
 	/* SPI GPIO */
 	pDev->spi_sclk_gpio = of_get_named_gpio(dev->of_node, "spi2-sclk-gpio", 0);
-	if(! gpio_is_valid(pDev->spi_sclk_gpio))
-		dev_err(dev,"can't get gpio spi2-sclk-gpio");
+	if (!gpio_is_valid(pDev->spi_sclk_gpio))
+		dev_err(dev, "can't get gpio spi2-sclk-gpio");
 	pDev->spi_mosi_gpio = of_get_named_gpio(dev->of_node, "spi2-mosi-gpio", 0);
-	if(! gpio_is_valid(pDev->spi_mosi_gpio))
-		dev_err(dev,"can't get gpio spi2-mosi-gpio");
+	if (!gpio_is_valid(pDev->spi_mosi_gpio))
+		dev_err(dev, "can't get gpio spi2-mosi-gpio");
 
 	/* FPGA regulators */
 	pDev->reg_1v1_fpga = devm_regulator_get(dev, "DA9063_BMEM");
-	if(IS_ERR(pDev->reg_1v1_fpga))
-		dev_err(dev,"can't get regulator DA9063_BMEM");
+	if (IS_ERR(pDev->reg_1v1_fpga))
+		dev_err(dev, "can't get regulator DA9063_BMEM");
 
 	pDev->reg_1v2_fpga = devm_regulator_get(dev, "DA9063_LDO2");
-	if(IS_ERR(pDev->reg_1v2_fpga))
-		dev_err(dev,"can't get regulator DA9063_LDO2");
+	if (IS_ERR(pDev->reg_1v2_fpga))
+		dev_err(dev, "can't get regulator DA9063_LDO2");
 
 	pDev->reg_1v8_fpga = devm_regulator_get(dev, "DA9063_LDO3");
-	if(IS_ERR(pDev->reg_1v8_fpga))
-		dev_err(dev,"can't get regulator DA9063_LDO3");
+	if (IS_ERR(pDev->reg_1v8_fpga))
+		dev_err(dev, "can't get regulator DA9063_LDO3");
 
 	pDev->reg_2v5_fpga = devm_regulator_get(dev, "DA9063_LDO6");
-	if(IS_ERR(pDev->reg_2v5_fpga))
-		dev_err(dev,"can't get regulator DA9063_LDO6");
+	if (IS_ERR(pDev->reg_2v5_fpga))
+		dev_err(dev, "can't get regulator DA9063_LDO6");
 
 	pDev->reg_3v15_fpga = devm_regulator_get(dev, "DA9063_LDO7");
-	if(IS_ERR(pDev->reg_3v15_fpga))
-		dev_err(dev,"can't get regulator DA9063_LDO7");
+	if (IS_ERR(pDev->reg_3v15_fpga))
+		dev_err(dev, "can't get regulator DA9063_LDO7");
 
 	pDev->pinctrl = devm_pinctrl_get(dev);
-	if(IS_ERR(pDev->pinctrl))
-		dev_err(dev,"can't get pinctrl");
+	if (IS_ERR(pDev->pinctrl))
+		dev_err(dev, "can't get pinctrl");
 
 	pDev->pins_default = pinctrl_lookup_state(pDev->pinctrl, "default");
-	if(IS_ERR(pDev->pins_default))
-		dev_err(dev,"can't get default pins %p %p", pDev->pinctrl, pDev->pins_default);
+	if (IS_ERR(pDev->pins_default))
+		dev_err(dev, "can't get default pins %p %p", pDev->pinctrl, pDev->pins_default);
 
 	pDev->pins_sleep = pinctrl_lookup_state(pDev->pinctrl, "idle");
-	if(IS_ERR(pDev->pins_sleep))
-		dev_err(dev,"can't get sleep pins %p %p", pDev->pinctrl, pDev->pins_sleep);
+	if (IS_ERR(pDev->pins_sleep))
+		dev_err(dev, "can't get sleep pins %p %p", pDev->pinctrl, pDev->pins_sleep);
 
 	// Yildun initial state shall be off to prevent leakage
 	// if standby entered without prior use of Yildun
 	pinctrl_select_state(pDev->pinctrl, pDev->pins_sleep);
 
 	if (gpio_request(pDev->spi_sclk_gpio, "SPI2_SCLK"))
-		dev_err(&pDev->pLinuxDevice->dev,"SPI2_SCLK can not be requested\n");
+		dev_err(&pDev->pLinuxDevice->dev, "SPI2_SCLK can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_sclk_gpio);
 	if (gpio_request(pDev->spi_mosi_gpio, "SPI2_MOSI"))
-		dev_err(&pDev->pLinuxDevice->dev,"SPI2_MOSI can not be requested\n");
+		dev_err(&pDev->pLinuxDevice->dev, "SPI2_MOSI can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_mosi_gpio);
 
@@ -160,7 +157,7 @@ BOOL GetPinStatusMX6S(PFVD_DEV_INFO pDev)
 
 DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 {
-	int tmo=10;
+	int tmo = 10;
 
 	// Set idle state (probably already done)
 	gpio_set_value(pDev->fpga_config, 1);
@@ -200,11 +197,11 @@ DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 	return 1;
 }
 
-/** 
+/**
  * This function should apply power to the device.
- * 
- * 
- * @param pDev 
+ *
+ *
+ * @param pDev
  */
 void BSPFvdPowerUpMX6S(PFVD_DEV_INFO pDev)
 {
@@ -232,12 +229,12 @@ void BSPFvdPowerUpMX6S(PFVD_DEV_INFO pDev)
 	usleep_range(10000, 20000);
 }
 
-/** 
+/**
  * This function should suspend power to the device.
  * It is useful only with devices that can power down under software control.
- * 
- * 
- * @param pDev 
+ *
+ *
+ * @param pDev
  */
 void BSPFvdPowerDownMX6S(PFVD_DEV_INFO pDev)
 {
@@ -259,11 +256,11 @@ void BSPFvdPowerDownMX6S(PFVD_DEV_INFO pDev)
 
 	// Set SPI as input
 	if (gpio_request(pDev->spi_sclk_gpio, "SPI2_SCLK"))
-		dev_err(&pDev->pLinuxDevice->dev,"SPI2_SCLK can not be requested\n");
+		dev_err(&pDev->pLinuxDevice->dev, "SPI2_SCLK can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_sclk_gpio);
 	if (gpio_request(pDev->spi_mosi_gpio, "SPI2_MOSI"))
-		dev_err(&pDev->pLinuxDevice->dev,"SPI2_MOSI can not be requested\n");
+		dev_err(&pDev->pLinuxDevice->dev, "SPI2_MOSI can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_mosi_gpio);
 }
