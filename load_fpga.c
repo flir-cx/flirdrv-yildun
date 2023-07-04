@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include "flir_kernel_os.h"
 #include "fpga.h"
 #include "fvdk_internal.h"
@@ -11,50 +12,49 @@
 #define ERROR_NO_CONFIG_DONE    10002
 #define ERROR_NO_SETUP          10003
 #define ERROR_NO_SPI            10004
-#define FW_DIR 			"FLIR/"
-#define FW_FILE 		"yildun.bin"
-#define SPI_MIN 		64
+#define FW_DIR "FLIR/"
+#define FW_FILE "yildun.bin"
+#define SPI_MIN 64
 
 static const struct firmware *pFW;
 
-PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG * size, char *pHeader)
+PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 {
 	GENERIC_FPGA_T *pGen;
 	BXAB_FPGA_T *pSpec;
 	int retval = 0;
-
 	char filename[] = FW_DIR FW_FILE;
+
 	retval = request_firmware(&pFW, filename, &pDev->pLinuxDevice->dev);
 	if (retval) {
 		dev_err(&pDev->pLinuxDevice->dev, "Failed to get file %s\n", filename);
-		return (NULL);
+		return NULL;
 	}
 
 	pr_debug("Got %d bytes of firmware from %s\n", pFW->size, filename);
 
 	/* Read generic header */
-	if (pFW->size < sizeof(GENERIC_FPGA_T)) {
-		return (NULL);
-	}
+	if (pFW->size < sizeof(GENERIC_FPGA_T))
+		return NULL;
+
 	pGen = (GENERIC_FPGA_T *) pFW->data;
-	if (pGen->headerrev > GENERIC_REV) {
-		return (NULL);
-	}
-	if (pGen->spec_size > 1024) {
-		return (NULL);
-	}
+	if (pGen->headerrev > GENERIC_REV)
+		return NULL;
+
+	if (pGen->spec_size > 1024)
+		return NULL;
 
 	/* Read specific part */
-	if (pFW->size < (sizeof(GENERIC_FPGA_T) + pGen->spec_size)) {
-		return (NULL);
-	}
-	pSpec = (BXAB_FPGA_T *) & pFW->data[sizeof(GENERIC_FPGA_T)];
+	if (pFW->size < (sizeof(GENERIC_FPGA_T) + pGen->spec_size))
+		return NULL;
+
+	pSpec = (BXAB_FPGA_T *) &pFW->data[sizeof(GENERIC_FPGA_T)];
 
 	/* Set FW size */
 	*size = pFW->size - sizeof(GENERIC_FPGA_T) - pGen->spec_size;
 
 	memcpy(pHeader, pFW->data, sizeof(GENERIC_FPGA_T) + pGen->spec_size);
-	return ((PUCHAR) & pFW->data[sizeof(GENERIC_FPGA_T) + pGen->spec_size]);
+	return ((PUCHAR) &pFW->data[sizeof(GENERIC_FPGA_T) + pGen->spec_size]);
 }
 
 void freeFpgaData(void)
@@ -69,12 +69,12 @@ int CheckFPGA(PFVD_DEV_INFO pDev)
 {
 	int res = ERROR_SUCCESS;
 
-	if (0 == pDev->pGetPinDone(pDev)) {
-		if (0 == pDev->pGetPinStatus(pDev))
+	if (pDev->pGetPinDone(pDev) == 0) {
+		if (pDev->pGetPinStatus(pDev) == 0)
 			res = -ERROR_NO_INIT_OK;
 		else
 			res = -ERROR_NO_CONFIG_DONE;
-		dev_err(&pDev->pLinuxDevice->dev, "CheckFPGA: FPGA load failed (%d)\n", res);
+		dev_err(&pDev->pLinuxDevice->dev, "%s: FPGA load failed (%d)\n", __func__, res);
 	}
 
 	return res;
@@ -88,11 +88,11 @@ struct spi_board_info chip = {
 
 
 
-/** 
+/**
  * LoadFPGA
- * 
- * @param pDev 
- * 
+ *
+ * @param pDev
+ *
  * @return 0 on success
  *      negative on error
  */
@@ -103,12 +103,12 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	unsigned char *fpgaBin;
 	struct spi_master *pspim;
 	struct spi_device *pspid;
-	ULONG *buf=0;
+	ULONG *buf = 0;
 	dma_addr_t phy;
 	// read file
 	fpgaBin = getFPGAData(pDev, &isize, pDev->fpga);
 	if (fpgaBin == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Error reading fpgadata file\n");
+		dev_err(&pDev->pLinuxDevice->dev, "%s: Error reading fpgadata file\n", __func__);
 		retval = -ERROR_IO_DEVICE;
 		goto ERROR;
 	}
@@ -117,7 +117,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
 	buf = dma_alloc_coherent(&pDev->pLinuxDevice->dev, osize, &phy, GFP_DMA | GFP_KERNEL);
 	if (!buf) {
-		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Error allocating buf\n");
+		dev_err(&pDev->pLinuxDevice->dev, "%s: Error allocating buf\n", __func__);
 		retval = -ENOMEM;
 		goto ERROR;
 	}
@@ -159,25 +159,24 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	// Put FPGA in programming mode
 	retval = pDev->pPutInProgrammingMode(pDev);
 	if (retval == 0) {
-		msleep(10);
+		msleep_range(10, 20);
 		if (pDev->pPutInProgrammingMode(pDev) == 0) {
-			dev_err(&pDev->pLinuxDevice->dev,
-					"LoadFPGA: Failed to set FPGA in programming mode\n");
-	        retval = -ERROR_NO_SETUP;
-	        goto ERROR;
+			dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to set FPGA in programming mode\n", __func__);
+			retval = -ERROR_NO_SETUP;
+			goto ERROR;
 		}
 	}
 
 	// Send FPGA code through SPI
 	pspim = spi_busnum_to_master(pDev->iSpiBus);
 	if (pspim == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Failed to get SPI master\n");
+		dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to get SPI master\n", __func__);
 		retval = -ERROR_NO_SPI;
 		goto ERROR;
 	}
 	pspid = spi_new_device(pspim, &chip);
 	if (pspid == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "LoadFPGA: Failed to set SPI device\n");
+		dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to set SPI device\n", __func__);
 		retval = -ERROR_NO_SPI;
 		goto ERROR;
 	}
