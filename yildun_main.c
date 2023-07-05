@@ -18,15 +18,9 @@
 #include <yildundev.h>
 #include <linux/dma-mapping.h>
 
-static long Yildun_IOControl(struct file *filep,
-						  unsigned int cmd,
-						  unsigned long arg);
-static int Yildun_Open(struct inode *inode,
-					struct file *filp);
-static DWORD DoIOControl(PFVD_DEV_INFO pDev,
-						 DWORD  Ioctl,
-						 PUCHAR pBuf,
-						 PUCHAR pUserBuf);
+static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg);
+static int Yildun_Open(struct inode *inode, struct file *filp);
+static DWORD DoIOControl(PFVD_DEV_INFO pDev, DWORD Ioctl, PUCHAR pBuf, PUCHAR pUserBuf);
 
 static PFVD_DEV_INFO pDev;
 static int __init Yildun_Init(void);
@@ -113,11 +107,7 @@ static int __init Yildun_Init(void)
 		goto OUT_CLASSCREATE;
 	}
 
-	pDev->dev = device_create(pDev->fvd_class,
-				  NULL,
-				  pDev->yildun_dev,
-				  NULL,
-				  "yildun");
+	pDev->dev = device_create(pDev->fvd_class, NULL, pDev->yildun_dev, NULL, "yildun");
 
 	if (!pDev->pSetupGpioAccess(pDev)) {
 		pr_err("Error setting up GPIO\n");
@@ -186,8 +176,7 @@ static int Yildun_Open(struct inode *inode, struct file *filp)
  *
  * @return
  */
-static long Yildun_IOControl(struct file *filep,
-		unsigned int cmd, unsigned long arg)
+static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	DWORD dwErr = ERROR_SUCCESS;
 	char *tmp;
@@ -227,10 +216,7 @@ static long Yildun_IOControl(struct file *filep,
  *
  * @return
  */
-DWORD DoIOControl(PFVD_DEV_INFO pDev,
-		  DWORD  Ioctl,
-		  PUCHAR pBuf,
-		  PUCHAR pUserBuf)
+DWORD DoIOControl(PFVD_DEV_INFO pDev, DWORD  Ioctl, PUCHAR pBuf, PUCHAR pUserBuf)
 {
 	DWORD  dwErr = ERROR_SUCCESS;
 	static int enabled;
