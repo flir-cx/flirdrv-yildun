@@ -7,6 +7,7 @@
 #include <linux/platform_device.h>
 #include <linux/ipu-v3.h>
 #include <linux/dma-mapping.h>
+#include <linux/delay.h>
 
 #define ERROR_NO_INIT_OK        10001
 #define ERROR_NO_CONFIG_DONE    10002
@@ -17,6 +18,12 @@
 #define SPI_MIN 64
 
 static const struct firmware *pFW;
+
+static inline void msleep_range(unsigned long min, unsigned long max)
+{
+	usleep_range(min * 1000, max * 1000);
+}
+
 
 PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 {
