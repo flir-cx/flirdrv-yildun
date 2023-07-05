@@ -1,0 +1,33 @@
+Building Module
+===============
+
+The module is normally built using the Yocto build system
+It can however be built standalone, but will need some dependencies for that to work
+
+The Makefile has been updated so It should work with a Yocto 3.3 tree
+
+Prerequisites
+-------------
+
+- Build a *flir-image* in your yocto tree
+- Set environment variables *YOCTO_DIRECTORY* and *CAMAPPS_DIRECTORY*
+  - YOCTO_DIRECTORY is the path to your top level yocto directory,
+    e.g. /path/evco-3.3 directory
+  - CAMAPPS_DIRECTORY is the path to your top level camapps directory
+
+Building
+--------
+
+Run (you need to select the correct directories)
+
+source /opt/poky/3.3-cortexa9t2hf/environment-setup-cortexa9t2hf-neon-oe-linux-gnueabi
+YOCTO_DIRECTORY=/src/evco-3.3 CAMAPPS_DIRECTORY=/src/camapps make
+
+Assuming everything is correct, the make system will use the right toolchain etc..
+
+Deploying yildun module to camera
+---------------------------------
+
+The makefile contains the following deploy targets
+
+- deploy -- deploy yildun.ko to home directory of user on camera
