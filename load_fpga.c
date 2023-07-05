@@ -15,8 +15,6 @@
 #define FW_FILE 		"yildun.bin"
 #define SPI_MIN 		64
 
-//#define MEASURE_TIMING
-
 static const struct firmware *pFW;
 
 PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG * size, char *pHeader)
@@ -88,7 +86,7 @@ struct spi_board_info chip = {
 	.mode = SPI_MODE_0,
 };
 
-#define tms(x) (x.tv_sec*1000 + x.tv_usec/1000)
+
 
 /** 
  * LoadFPGA
@@ -107,12 +105,6 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	struct spi_device *pspid;
 	ULONG *buf=0;
 	dma_addr_t phy;
-#ifdef MEASURE_TIMING
-	struct timeval t[6];
-
-	do_gettimeofday(&t[0]);
-#endif
-
 	// read file
 	fpgaBin = getFPGAData(pDev, &isize, pDev->fpga);
 	if (fpgaBin == NULL) {
@@ -120,10 +112,6 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		retval = -ERROR_IO_DEVICE;
 		goto ERROR;
 	}
-
-#ifdef MEASURE_TIMING
-	do_gettimeofday(&t[1]);
-#endif
 
 	// Allocate a buffer suitable for DMA
 	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
@@ -168,10 +156,6 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		}
 	}
 
-#ifdef MEASURE_TIMING
-	do_gettimeofday(&t[2]);
-#endif
-
 	// Put FPGA in programming mode
 	retval = pDev->pPutInProgrammingMode(pDev);
 	if (retval == 0) {
@@ -183,10 +167,6 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	        goto ERROR;
 		}
 	}
-
-#ifdef MEASURE_TIMING
-	do_gettimeofday(&t[3]);
-#endif
 
 	// Send FPGA code through SPI
 	pspim = spi_busnum_to_master(pDev->iSpiBus);
@@ -210,27 +190,11 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	device_unregister(&pspid->dev);
 	put_device(&pspim->dev);
 
-#ifdef MEASURE_TIMING
-	do_gettimeofday(&t[4]);
-#endif
-
 	if (CheckFPGA(pDev) != -ERROR_SUCCESS) {
 		retval = -1;
 		goto ERROR;
 	}
 
-#ifdef MEASURE_TIMING
-	do_gettimeofday(&t[5]);
-
-	// Printing mesage here breaks startup timing for SB 0601 detectors
-	pr_info("FPGA loaded in %ld ms (read %ld rotate %ld prep %ld SPI %ld check %ld)\r\n",
-		tms(t[5]) - tms(t[0]),
-		tms(t[1]) - tms(t[0]),
-		tms(t[2]) - tms(t[1]),
-		tms(t[3]) - tms(t[2]),
-		tms(t[4]) - tms(t[3]),
-		tms(t[5]) - tms(t[4]));
-#endif
 	retval = 0;
 ERROR:
 	if (buf)
