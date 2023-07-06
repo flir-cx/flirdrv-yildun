@@ -105,6 +105,7 @@ struct spi_board_info chip = {
  */
 int LoadFPGA(PFVD_DEV_INFO pDev)
 {
+	dev_err(0, "loadFPGA");
 	int retval = 0;
 	unsigned long isize, osize;
 	unsigned char *fpgaBin;
