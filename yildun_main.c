@@ -17,6 +17,13 @@
 #include <linux/of.h>
 #include <yildundev.h>
 #include <linux/dma-mapping.h>
+#include <linux/miscdevice.h>
+
+struct yildun_data {
+	PFVD_DEV_INFO pDev;
+	struct miscdevice miscdev;
+	struct device *dev;
+};
 
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 static int open(struct inode *inode, struct file *filp);
@@ -153,6 +160,68 @@ static void deinit(void)
 	pDev = NULL;
 }
 
+static const struct file_operations yildun_misc_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = ioctl,
+	/* .open = yildun_open, */
+	/* .mmap = yildun_mmap, */
+};
+
+static int yildun_probe(struct platform_device *pdev)
+{
+	int ret;
+	struct yildun_data *data = devm_kzalloc(&pdev->dev, sizeof(struct yildun_data), GFP_KERNEL);
+	if (!data)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, data);
+	/* data->pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL); */
+	/* if (!data->pDev) */
+	/* 	return -ENOMEM; */
+
+	data->dev = &pdev->dev;
+	data->miscdev.minor = MISC_DYNAMIC_MINOR;
+	data->miscdev.name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "yildun-misc");
+	data->miscdev.fops = &yildun_misc_fops;
+	data->miscdev.parent = &pdev->dev;
+
+	ret = misc_register(&data->miscdev);
+	if (ret) {
+		dev_err(&pdev->dev, "Failed to register miscdev for FVDK driver\n");
+		//goto ERROR_MISC_REGISTER;
+	}
+
+	return init();
+}
+
+static int yildun_remove(struct platform_device *pdev)
+{
+	deinit();
+	return 0;
+}
+
+/* static const struct dev_pm_ops yildun_pm_ops = { */
+/* 	.suspend_late = yildun_suspend, */
+/* 	.resume_early = yildun_resume, */
+/* }; */
+
+static const struct of_device_id yildun_match_table[] = {
+	{ .compatible = "flir,yildun", },
+	{}
+};
+
+static struct platform_driver yildun_driver = {
+	.probe = yildun_probe,
+	.remove = yildun_remove,
+	.driver = {
+		.of_match_table	= yildun_match_table,
+		.name = "yildun-misc-driver",
+		.owner = THIS_MODULE,
+		/* .pm = &yildun_pm_ops, */
+	},
+};
+
+
 /**
  *  FVD_Open
  *
@@ -215,8 +284,7 @@ OUT:
 	return ret;
 }
 
-module_init(init);
-module_exit(deinit);
+module_platform_driver(yildun_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("FLIR Yildun FPGA loader");
