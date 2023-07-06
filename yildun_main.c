@@ -27,7 +27,6 @@ struct yildun_data {
 
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
-static PFVD_DEV_INFO pDev;
 static int init(struct device *dev);
 static void deinit(struct device *dev);
 
@@ -44,26 +43,26 @@ static int init(struct device *dev)
 
 	pr_info("Yildun Init\n");
 
-	pDev->pLinuxDevice->dev.dma_mask = devm_kmalloc(pDev->dev, sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
+	data->pDev->pLinuxDevice->dev.dma_mask = devm_kmalloc(dev, sizeof(*data->pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
 
-	if (!pDev->pLinuxDevice->dev.dma_mask)
+	if (!data->pDev->pLinuxDevice->dev.dma_mask)
 		return -ENOMEM;
 
-	*pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32);
-	pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+	*data->pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32);
+	data->pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 
-	retval = SetupMX6S(pDev);
+	retval = SetupMX6S(data->pDev);
 	if (retval) {
 		pr_err("Error initializing MX6S for Yildun\n");
 		return retval;
 	}
 
-	if (!pDev->pSetupGpioAccess) {
+	if (!data->pDev->pSetupGpioAccess) {
 		pr_err("Error creating Yildun class\n");
 		goto OUT_CLASSCREATE;
 	}
 
-	if (!pDev->pSetupGpioAccess(pDev)) {
+	if (!data->pDev->pSetupGpioAccess(data->pDev)) {
 		pr_err("Error setting up GPIO\n");
 		goto OUT_DEVICECREATE;
 	}
@@ -71,9 +70,9 @@ static int init(struct device *dev)
 	return 0;
 
 OUT_DEVICECREATE:
-	pDev->pCleanupGpio(pDev);
+	data->pDev->pCleanupGpio(data->pDev);
 OUT_CLASSCREATE:
-	pDev->pBSPFvdPowerDown(pDev);
+	data->pDev->pBSPFvdPowerDown(data->pDev);
 	return retval;
 }
 
@@ -84,7 +83,7 @@ OUT_CLASSCREATE:
 static void deinit(struct device *dev)
 {
 	struct yildun_data *data = dev_get_drvdata(dev);
-	pDev->pCleanupGpio(pDev);
+	data->pDev->pCleanupGpio(data->pDev);
 }
 
 static const struct file_operations yildun_misc_fops = {
@@ -104,9 +103,14 @@ static int yildun_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	platform_set_drvdata(pdev, data);
-	/* data->pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL); */
-	/* if (!data->pDev) */
-	/* 	return -ENOMEM; */
+
+	// Allocate (and zero-initiate) our control structure.
+	data->pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
+	if (!data->pDev)
+		return -ENOMEM;
+
+	data->pDev->pLinuxDevice = pdev;
+	data->pDev->dev = dev;
 
 	data->dev = dev;
 	data->miscdev.minor = MISC_DYNAMIC_MINOR;
@@ -118,15 +122,9 @@ static int yildun_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err(dev, "Failed to register miscdev for FVDK driver\n");
 		//goto ERROR_MISC_REGISTER;
+		//TODO: Fail!!
 	}
 
-	// Allocate (and zero-initiate) our control structure.
-	pDev = (PFVD_DEV_INFO) devm_kzalloc(dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
-	if (!pDev)
-		return -ENOMEM;
-
-	pDev->pLinuxDevice = pdev;
-	pDev->dev = dev;
 	return init(dev);
 }
 
@@ -173,6 +171,7 @@ static struct platform_driver yildun_driver = {
  */
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
+	struct yildun_data *data = container_of(filep->private_data, struct yildun_data, miscdev);
 	int ret = 0;
 	static int enabled;
 
@@ -180,10 +179,10 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
 		if (!enabled) {
-			pDev->pBSPFvdPowerUp(pDev);
-			ret = LoadFPGA(pDev);
+			data->pDev->pBSPFvdPowerUp(data->pDev);
+			ret = LoadFPGA(data->pDev);
 			if (ret)
-				pDev->pBSPFvdPowerDown(pDev);
+				data->pDev->pBSPFvdPowerDown(data->pDev);
 			else
 				enabled = TRUE;
 		}
@@ -192,7 +191,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	case IOCTL_YILDUN_DISABLE:
 		pr_debug("IOCTL_YILDUN_DISABLE\n");
 		if (enabled) {
-			pDev->pBSPFvdPowerDown(pDev);
+			data->pDev->pBSPFvdPowerDown(data->pDev);
 			enabled = FALSE;
 		}
 		break;
