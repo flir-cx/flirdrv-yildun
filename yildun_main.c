@@ -43,24 +43,6 @@ static int __init init(void)
 
 	pr_info("Yildun Init\n");
 
-	pDev->pLinuxDevice = platform_device_alloc("yildun", 1);
-	if (pDev->pLinuxDevice == NULL) {
-		pr_err("Error adding allocating device\n");
-		retval = -4;
-		goto OUT_NODEVALLOC;
-	}
-
-	pDev->pLinuxDevice = platform_device_alloc("yildun", 1);
-	if (pDev->pLinuxDevice == NULL) {
-		pr_err("Error adding allocating device\n");
-		goto OUT_PLATFORMDEVICEALLOC;
-	}
-	retval = platform_device_add(pDev->pLinuxDevice);
-	if (retval) {
-		pr_err("Error adding platform device\n");
-		goto OUT_PLATFORMDEVICEADD;
-	}
-
 	pDev->pLinuxDevice->dev.dma_mask = kmalloc(sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
 	if (pDev->pLinuxDevice->dev.dma_mask == NULL) {
 		retval = -ENOMEM;
@@ -99,12 +81,7 @@ OUT_CLASSCREATE:
 OUT_SETUPMX6Q:
 	kfree(pDev->pLinuxDevice->dev.dma_mask);
 OUT_NODMAMASK:
-	platform_device_del(pDev->pLinuxDevice);
-OUT_PLATFORMDEVICEADD:
-	platform_device_put(pDev->pLinuxDevice);
-OUT_PLATFORMDEVICEALLOC:
 	pDev->pBSPFvdPowerDown(pDev);
-OUT_NODEVALLOC:
 	return retval;
 }
 
@@ -116,7 +93,7 @@ static void deinit(void)
 {
 	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 	class_destroy(pDev->fvd_class);
-	platform_device_unregister(pDev->pLinuxDevice);
+	/* platform_device_unregister(pDev->pLinuxDevice); */
 	pDev->pCleanupGpio(pDev);
 }
 
@@ -156,6 +133,7 @@ static int yildun_probe(struct platform_device *pdev)
 	if (!pDev)
 		return -ENOMEM;
 
+	pDev->pLinuxDevice = pdev;
 	return init();
 }
 
