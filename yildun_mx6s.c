@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "flir_kernel_os.h"
-#include "fvdk_internal.h"
+#include "yildun_internal.h"
 #include <linux/of_gpio.h>
 #include <linux/of.h>
 #include <linux/regulator/consumer.h>

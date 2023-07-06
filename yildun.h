@@ -3,7 +3,7 @@
 #define YILDUN_H
 
 #include "flir_kernel_os.h"
-#include "fvdk_internal.h"
+#include "yildun_internal.h"
 
 // Function prototypes to set up hardware specific items
 int SetupMX6S(PFVD_DEV_INFO pDev);

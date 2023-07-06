@@ -13,6 +13,7 @@
  ***********************************************************************/
 
 #include "yildun.h"
+#include "yildun_internal.h"
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <yildundev.h>
@@ -121,7 +122,7 @@ static int yildun_probe(struct platform_device *pdev)
 
 	ret = misc_register(&data->miscdev);
 	if (ret) {
-		dev_err(dev, "Failed to register miscdev for FVDK driver\n");
+		dev_err(dev, "Failed to register miscdev for Yildun driver\n");
 		//goto ERROR_MISC_REGISTER;
 		//TODO: Fail!!
 	}
