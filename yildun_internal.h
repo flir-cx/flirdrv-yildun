@@ -1,18 +1,8 @@
 /***********************************************************************
  *                                                                     
- * Project: Balthazar
- * $Date$
- * $Author$
- *
- * $Id$
- *
- * Description of file:
- *    FLIR Video Device driver.
- *    Internal structs and definitions
+ *    FLIR Yildun Device driver.
  *
  * Last check-in changelist:
- * $Change$
- * 
  *
  * Copyright: FLIR Systems AB.  All rights reserved.
  *
