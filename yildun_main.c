@@ -179,6 +179,7 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
 {
 	int ret = 0;
 	char *tmp;
+	static int enabled;
 
 	tmp = kzalloc(_IOC_SIZE(cmd), GFP_KERNEL);
 	if (!tmp)
@@ -192,7 +193,7 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
 		goto OUT;
 	}
 
-	switch (ioctl_cmd) {
+	switch (cmd) {
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
 		if (!enabled) {
