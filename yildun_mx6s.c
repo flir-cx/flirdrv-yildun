@@ -36,13 +36,6 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	struct device *dev = pDev->dev;
 	int ret;
 
-	dev->of_node = of_find_compatible_node(NULL, NULL, "flir,yildun");
-
-	if (IS_ERR(dev->of_node)) {
-		dev_err(dev, "unable to get flir,yildun device tree\n");
-		return FALSE;
-	}
-
 	/* FPGA control GPIO */
 	pDev->fpga_ce = of_get_named_gpio(dev->of_node, "fpga2-ce-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_ce)) {
