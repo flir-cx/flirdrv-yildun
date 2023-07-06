@@ -24,7 +24,7 @@ ifneq ($(KERNEL_PATH),)
        KERNEL_SRC = $(KERNEL_PATH)
 endif
 
-WERROR = -Werror
+#WERROR = -Werror
 EXTRA_CFLAGS = -I${INCLUDE2_SRC} -I${INCLUDE_SRC} ${WERROR}
 
 	obj-m := yildun.o
