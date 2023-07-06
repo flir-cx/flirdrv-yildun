@@ -42,10 +42,6 @@ static int __init init(void)
 	int retval = -1;
 
 	pr_info("Yildun Init\n");
-	// Allocate (and zero-initiate) our control structure.
-	pDev = (PFVD_DEV_INFO) kzalloc(sizeof(FVD_DEV_INFO), GFP_KERNEL);
-	if (!pDev)
-		return -ENOMEM;
 
 	pDev->pLinuxDevice = platform_device_alloc("yildun", 1);
 	if (pDev->pLinuxDevice == NULL) {
@@ -109,8 +105,6 @@ OUT_PLATFORMDEVICEADD:
 OUT_PLATFORMDEVICEALLOC:
 	pDev->pBSPFvdPowerDown(pDev);
 OUT_NODEVALLOC:
-	kfree(pDev);
-	pDev = NULL;
 	return retval;
 }
 
@@ -124,8 +118,6 @@ static void deinit(void)
 	class_destroy(pDev->fvd_class);
 	platform_device_unregister(pDev->pLinuxDevice);
 	pDev->pCleanupGpio(pDev);
-	kfree(pDev);
-	pDev = NULL;
 }
 
 static const struct file_operations yildun_misc_fops = {
@@ -158,6 +150,11 @@ static int yildun_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to register miscdev for FVDK driver\n");
 		//goto ERROR_MISC_REGISTER;
 	}
+
+	// Allocate (and zero-initiate) our control structure.
+	pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
+	if (!pDev)
+		return -ENOMEM;
 
 	return init();
 }
