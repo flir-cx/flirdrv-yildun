@@ -20,7 +20,6 @@
 
 static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg);
 static int Yildun_Open(struct inode *inode, struct file *filp);
-static int do_ioctl(PFVD_DEV_INFO pDev, unsigned int ioctl_cmd, char *buf, unsigned char *userbuf);
 
 static PFVD_DEV_INFO pDev;
 static int __init Yildun_Init(void);
@@ -193,40 +192,6 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
 		goto OUT;
 	}
 
-	ret = do_ioctl(pDev, cmd, tmp, (unsigned char *)arg);
-	if (ret) {
-		pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
-		goto OUT;
-	}
-
-	if (_IOC_DIR(cmd) & _IOC_READ) {
-		ret = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
-	}
-	if (ret) {
-		pr_err("Yildun: Copy to user failed: %d\n", ret);
-		goto OUT;
-	}
-
-OUT:
-	kfree(tmp);
-	return ret;
-}
-
-/**
- * DoIOControl
- *
- * @param pDev
- * @param Ioctl
- * @param pBuf
- * @param pUserBuf
- *
- * @return
- */
-int do_ioctl(PFVD_DEV_INFO pDev, unsigned int ioctl_cmd, char *buf, unsigned char *userbuf)
-{
-	int ret = 0;
-	static int enabled;
-
 	switch (ioctl_cmd) {
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
@@ -252,6 +217,22 @@ int do_ioctl(PFVD_DEV_INFO pDev, unsigned int ioctl_cmd, char *buf, unsigned cha
 		ret = -ERROR_NOT_SUPPORTED;
 		break;
 	}
+
+	if (ret) {
+		pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
+		goto OUT;
+	}
+
+	if (_IOC_DIR(cmd) & _IOC_READ) {
+		ret = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
+	}
+	if (ret) {
+		pr_err("Yildun: Copy to user failed: %d\n", ret);
+		goto OUT;
+	}
+
+OUT:
+	kfree(tmp);
 	return ret;
 }
 
