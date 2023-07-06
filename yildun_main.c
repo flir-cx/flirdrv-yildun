@@ -59,13 +59,10 @@ static int __init init(void)
 		goto OUT_SETUPMX6Q;
 	}
 
-	pDev->fvd_class = class_create(THIS_MODULE, "yildun");
 	if (!pDev->pSetupGpioAccess) {
 		pr_err("Error creating Yildun class\n");
 		goto OUT_CLASSCREATE;
 	}
-
-	pDev->dev = device_create(pDev->fvd_class, NULL, pDev->yildun_dev, NULL, "yildun");
 
 	if (!pDev->pSetupGpioAccess(pDev)) {
 		pr_err("Error setting up GPIO\n");
@@ -75,7 +72,6 @@ static int __init init(void)
 	return 0;
 
 OUT_DEVICECREATE:
-	class_destroy(pDev->fvd_class);
 	pDev->pCleanupGpio(pDev);
 OUT_CLASSCREATE:
 OUT_SETUPMX6Q:
@@ -134,6 +130,7 @@ static int yildun_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	pDev->pLinuxDevice = pdev;
+	pDev->dev = &pdev->dev;
 	return init();
 }
 
