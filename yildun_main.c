@@ -20,6 +20,12 @@
 #include <linux/dma-mapping.h>
 #include <linux/miscdevice.h>
 
+static int init(struct device *dev);
+static void deinit(struct device *dev);
+static int yildun_probe(struct platform_device *pdev);
+static int yildun_remove(struct platform_device *pdev);
+static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
+
 struct yildun_data {
 	PFVD_DEV_INFO pDev;
 	struct miscdevice miscdev;
@@ -27,10 +33,35 @@ struct yildun_data {
 	int enabled;
 };
 
-static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
+static const struct file_operations yildun_misc_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = ioctl,
+	/* .open = yildun_open, */
+	/* .mmap = yildun_mmap, */
+};
 
-static int init(struct device *dev);
-static void deinit(struct device *dev);
+/* static const struct dev_pm_ops yildun_pm_ops = { */
+/* 	.suspend_late = yildun_suspend, */
+/* 	.resume_early = yildun_resume, */
+/* }; */
+
+static const struct of_device_id yildun_match_table[] = {
+	{ .compatible = "flir,yildun", },
+	{}
+};
+
+static struct platform_driver yildun_driver = {
+	.probe = yildun_probe,
+	.remove = yildun_remove,
+	.driver = {
+		.of_match_table	= yildun_match_table,
+		.name = "yildun-misc-driver",
+		.owner = THIS_MODULE,
+		/* .pm = &yildun_pm_ops, */
+	},
+};
+
+
 
 /**
  * Yildun_Init
@@ -88,13 +119,6 @@ static void deinit(struct device *dev)
 	data->pDev->pCleanupGpio(data->pDev);
 }
 
-static const struct file_operations yildun_misc_fops = {
-	.owner = THIS_MODULE,
-	.unlocked_ioctl = ioctl,
-	/* .open = yildun_open, */
-	/* .mmap = yildun_mmap, */
-};
-
 static int yildun_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -139,28 +163,6 @@ static int yildun_remove(struct platform_device *pdev)
 	deinit(dev);
 	return 0;
 }
-
-/* static const struct dev_pm_ops yildun_pm_ops = { */
-/* 	.suspend_late = yildun_suspend, */
-/* 	.resume_early = yildun_resume, */
-/* }; */
-
-static const struct of_device_id yildun_match_table[] = {
-	{ .compatible = "flir,yildun", },
-	{}
-};
-
-static struct platform_driver yildun_driver = {
-	.probe = yildun_probe,
-	.remove = yildun_remove,
-	.driver = {
-		.of_match_table	= yildun_match_table,
-		.name = "yildun-misc-driver",
-		.owner = THIS_MODULE,
-		/* .pm = &yildun_pm_ops, */
-	},
-};
-
 
 /**
  * Yildun_IOControl
