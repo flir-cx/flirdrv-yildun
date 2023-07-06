@@ -39,8 +39,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	/* FPGA control GPIO */
 	pDev->fpga_ce = of_get_named_gpio(dev->of_node, "fpga2-ce-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_ce)) {
-		ret = devm_gpio_request_one(dev, pDev->fpga_ce,
-				GPIOF_OUT_INIT_LOW, "FPGA2 CE");
+		ret = devm_gpio_request_one(dev, pDev->fpga_ce, GPIOF_OUT_INIT_LOW, "FPGA2 CE");
 		if (ret)
 			dev_err(dev, "unable to get FPGA2 CE gpio\n");
 	} else {
@@ -49,8 +48,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 
 	pDev->fpga_conf_done = of_get_named_gpio(dev->of_node, "fpga2-conf-done-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_conf_done)) {
-		ret = devm_gpio_request_one(dev, pDev->fpga_conf_done,
-				GPIOF_IN, "FPGA2 CONF_DONE");
+		ret = devm_gpio_request_one(dev, pDev->fpga_conf_done, GPIOF_IN, "FPGA2 CONF_DONE");
 		if (ret)
 			dev_err(dev, "unable to get FPGA2 CONF_DONE gpio\n");
 	} else {
@@ -59,8 +57,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 
 	pDev->fpga_config = of_get_named_gpio(dev->of_node, "fpga2-config-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_config)) {
-		ret = devm_gpio_request_one(dev, pDev->fpga_config,
-				GPIOF_OUT_INIT_LOW, "FPGA2 CONFIG");
+		ret = devm_gpio_request_one(dev, pDev->fpga_config, GPIOF_OUT_INIT_LOW, "FPGA2 CONFIG");
 		if (ret)
 			dev_err(dev, "unable to get FPGA2 CONFIG gpio\n");
 	} else {
@@ -69,8 +66,7 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 
 	pDev->fpga_status = of_get_named_gpio(dev->of_node, "fpga2-status-gpio", 0);
 	if (gpio_is_valid(pDev->fpga_status)) {
-		ret = devm_gpio_request_one(dev, pDev->fpga_status,
-				GPIOF_IN, "FPGA2 STATUS");
+		ret = devm_gpio_request_one(dev, pDev->fpga_status, GPIOF_IN, "FPGA2 STATUS");
 		if (ret)
 			dev_err(dev, "unable to get FPGA2 STATUS gpio\n");
 	} else {
