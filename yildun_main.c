@@ -20,7 +20,7 @@
 
 static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg);
 static int Yildun_Open(struct inode *inode, struct file *filp);
-static DWORD DoIOControl(PFVD_DEV_INFO pDev, DWORD Ioctl, PUCHAR pBuf, PUCHAR pUserBuf);
+static int do_ioctl(PFVD_DEV_INFO pDev, unsigned int ioctl_cmd, char *buf, unsigned char *userbuf);
 
 static PFVD_DEV_INFO pDev;
 static int __init Yildun_Init(void);
@@ -178,7 +178,7 @@ static int Yildun_Open(struct inode *inode, struct file *filp)
  */
 static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
-	DWORD dwErr = ERROR_SUCCESS;
+	int ret = 0;
 	char *tmp;
 
 	tmp = kzalloc(_IOC_SIZE(cmd), GFP_KERNEL);
@@ -186,24 +186,25 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
 		return -ENOMEM;
 
 	if (_IOC_DIR(cmd) & _IOC_WRITE) {
-		dwErr = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
-		if (dwErr)
-			pr_err("Yildun: Copy from user failed: %ld\n", dwErr);
+		ret = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
+		if (ret)
+			pr_err("Yildun: Copy from user failed: %d\n", ret);
 	}
 
-	if (dwErr == ERROR_SUCCESS) {
-		dwErr = DoIOControl(pDev, cmd, tmp, (PUCHAR)arg);
-		if (dwErr)
-			pr_err("Yildun Ioctl %X failed: %ld\n", cmd, dwErr);
+	if (!ret) {
+		ret = do_ioctl(pDev, cmd, tmp, (unsigned char *)arg);
+		if (ret) {
+			pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
+		}
 	}
 
-	if ((dwErr == ERROR_SUCCESS) && (_IOC_DIR(cmd) & _IOC_READ)) {
-		dwErr = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
-		if (dwErr)
-			pr_err("Yildun: Copy to user failed: %ld\n", dwErr);
+	if ((!ret) && (_IOC_DIR(cmd) & _IOC_READ)) {
+		ret = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
+		if (ret)
+			pr_err("Yildun: Copy to user failed: %d\n", ret);
 	}
 	kfree(tmp);
-	return dwErr;
+	return ret;
 }
 
 /**
@@ -216,18 +217,18 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
  *
  * @return
  */
-DWORD DoIOControl(PFVD_DEV_INFO pDev, DWORD  Ioctl, PUCHAR pBuf, PUCHAR pUserBuf)
+int do_ioctl(PFVD_DEV_INFO pDev, unsigned int ioctl_cmd, char *buf, unsigned char *userbuf)
 {
-	DWORD  dwErr = ERROR_SUCCESS;
+	int ret = 0;
 	static int enabled;
 
-	switch (Ioctl) {
+	switch (ioctl_cmd) {
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
 		if (!enabled) {
 			pDev->pBSPFvdPowerUp(pDev);
-			dwErr = LoadFPGA(pDev);
-			if (dwErr)
+			ret = LoadFPGA(pDev);
+			if (ret)
 				pDev->pBSPFvdPowerDown(pDev);
 			else
 				enabled = TRUE;
@@ -243,10 +244,10 @@ DWORD DoIOControl(PFVD_DEV_INFO pDev, DWORD  Ioctl, PUCHAR pBuf, PUCHAR pUserBuf
 		break;
 
 	default:
-		dwErr = -ERROR_NOT_SUPPORTED;
+		ret = -ERROR_NOT_SUPPORTED;
 		break;
 	}
-	return dwErr;
+	return ret;
 }
 
 module_init(Yildun_Init);
