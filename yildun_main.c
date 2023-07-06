@@ -39,46 +39,46 @@ static void deinit(void);
  */
 static int __init init(void)
 {
-	int retval = -1;
+	/* int retval = -1; */
 
 	pr_info("Yildun Init\n");
 
-	pDev->pLinuxDevice->dev.dma_mask = kmalloc(sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
-	if (pDev->pLinuxDevice->dev.dma_mask == NULL) {
-		retval = -ENOMEM;
-		goto OUT_NODMAMASK;
-	}
-	*pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32);
-	pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+	/* pDev->pLinuxDevice->dev.dma_mask = kmalloc(sizeof(*pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL); */
+	/* if (pDev->pLinuxDevice->dev.dma_mask == NULL) { */
+	/* 	retval = -ENOMEM; */
+	/* 	goto OUT_NODMAMASK; */
+	/* } */
+	/* *pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32); */
+	/* pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32); */
 
-	platform_set_drvdata(pDev->pLinuxDevice, pDev);
+	/* platform_set_drvdata(pDev->pLinuxDevice, pDev); */
 
-	retval = SetupMX6S(pDev);
-	if (retval) {
-		pr_err("Error initializing MX6S for Yildun\n");
-		goto OUT_SETUPMX6Q;
-	}
+	/* retval = SetupMX6S(pDev); */
+	/* if (retval) { */
+	/* 	pr_err("Error initializing MX6S for Yildun\n"); */
+	/* 	goto OUT_SETUPMX6Q; */
+	/* } */
 
-	if (!pDev->pSetupGpioAccess) {
-		pr_err("Error creating Yildun class\n");
-		goto OUT_CLASSCREATE;
-	}
+	/* if (!pDev->pSetupGpioAccess) { */
+	/* 	pr_err("Error creating Yildun class\n"); */
+	/* 	goto OUT_CLASSCREATE; */
+	/* } */
 
-	if (!pDev->pSetupGpioAccess(pDev)) {
-		pr_err("Error setting up GPIO\n");
-		goto OUT_DEVICECREATE;
-	}
+	/* if (!pDev->pSetupGpioAccess(pDev)) { */
+	/* 	pr_err("Error setting up GPIO\n"); */
+	/* 	goto OUT_DEVICECREATE; */
+	/* } */
 
 	return 0;
 
-OUT_DEVICECREATE:
-	pDev->pCleanupGpio(pDev);
-OUT_CLASSCREATE:
-OUT_SETUPMX6Q:
-	kfree(pDev->pLinuxDevice->dev.dma_mask);
-OUT_NODMAMASK:
-	pDev->pBSPFvdPowerDown(pDev);
-	return retval;
+/* OUT_DEVICECREATE: */
+/* 	pDev->pCleanupGpio(pDev); */
+/* OUT_CLASSCREATE: */
+/* OUT_SETUPMX6Q: */
+/* 	kfree(pDev->pLinuxDevice->dev.dma_mask); */
+/* OUT_NODMAMASK: */
+/* 	pDev->pBSPFvdPowerDown(pDev); */
+/* 	return retval; */
 }
 
 /**
@@ -87,10 +87,10 @@ OUT_NODMAMASK:
  */
 static void deinit(void)
 {
-	device_destroy(pDev->fvd_class, pDev->yildun_dev);
-	class_destroy(pDev->fvd_class);
-	/* platform_device_unregister(pDev->pLinuxDevice); */
-	pDev->pCleanupGpio(pDev);
+	/* device_destroy(pDev->fvd_class, pDev->yildun_dev); */
+	/* class_destroy(pDev->fvd_class); */
+	/* /\* platform_device_unregister(pDev->pLinuxDevice); *\/ */
+	/* pDev->pCleanupGpio(pDev); */
 }
 
 static const struct file_operations yildun_misc_fops = {
@@ -136,6 +136,9 @@ static int yildun_probe(struct platform_device *pdev)
 
 static int yildun_remove(struct platform_device *pdev)
 {
+	struct yildun_data *data = platform_get_drvdata(pdev);
+
+	misc_deregister(&data->miscdev);
 	deinit();
 	return 0;
 }
