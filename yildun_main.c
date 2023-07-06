@@ -178,20 +178,7 @@ static int open(struct inode *inode, struct file *filp)
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
-	char *tmp;
 	static int enabled;
-
-	tmp = kzalloc(_IOC_SIZE(cmd), GFP_KERNEL);
-	if (!tmp)
-		return -ENOMEM;
-
-	if (_IOC_DIR(cmd) & _IOC_WRITE) {
-		ret = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
-	}
-	if (ret) {
-		pr_err("Yildun: Copy from user failed: %d\n", ret);
-		goto OUT;
-	}
 
 	switch (cmd) {
 	case IOCTL_YILDUN_ENABLE:
@@ -224,16 +211,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		goto OUT;
 	}
 
-	if (_IOC_DIR(cmd) & _IOC_READ) {
-		ret = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
-	}
-	if (ret) {
-		pr_err("Yildun: Copy to user failed: %d\n", ret);
-		goto OUT;
-	}
-
 OUT:
-	kfree(tmp);
 	return ret;
 }
 
