@@ -118,14 +118,11 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	// if standby entered without prior use of Yildun
 	pinctrl_select_state(pDev->pinctrl, pDev->pins_sleep);
 
-	if (devm_gpio_request_one(dev, pDev->spi_sclk_gpio, "SPI2_SCLK"))
+	if (devm_gpio_request_one(dev, pDev->spi_sclk_gpio, GPIOF_IN, "SPI2_SCLK"))
 		dev_err(pDev->dev, "SPI2_SCLK can not be requested\n");
-	else
-		gpio_direction_input(pDev->spi_sclk_gpio);
-	if (devm_gpio_request_one(dev, pDev->spi_mosi_gpio, "SPI2_MOSI"))
+
+	if (devm_gpio_request_one(dev, pDev->spi_mosi_gpio, GPIOF_IN, "SPI2_MOSI"))
 		dev_err(pDev->dev, "SPI2_MOSI can not be requested\n");
-	else
-		gpio_direction_input(pDev->spi_mosi_gpio);
 
 	return TRUE;
 }
