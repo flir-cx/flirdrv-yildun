@@ -187,22 +187,27 @@ static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long
 
 	if (_IOC_DIR(cmd) & _IOC_WRITE) {
 		ret = copy_from_user(tmp, (void *)arg, _IOC_SIZE(cmd));
-		if (ret)
-			pr_err("Yildun: Copy from user failed: %d\n", ret);
+	}
+	if (ret) {
+		pr_err("Yildun: Copy from user failed: %d\n", ret);
+		goto OUT;
 	}
 
-	if (!ret) {
-		ret = do_ioctl(pDev, cmd, tmp, (unsigned char *)arg);
-		if (ret) {
-			pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
-		}
+	ret = do_ioctl(pDev, cmd, tmp, (unsigned char *)arg);
+	if (ret) {
+		pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
+		goto OUT;
 	}
 
-	if ((!ret) && (_IOC_DIR(cmd) & _IOC_READ)) {
+	if (_IOC_DIR(cmd) & _IOC_READ) {
 		ret = copy_to_user((void *)arg, tmp, _IOC_SIZE(cmd));
-		if (ret)
-			pr_err("Yildun: Copy to user failed: %d\n", ret);
 	}
+	if (ret) {
+		pr_err("Yildun: Copy to user failed: %d\n", ret);
+		goto OUT;
+	}
+
+OUT:
 	kfree(tmp);
 	return ret;
 }
