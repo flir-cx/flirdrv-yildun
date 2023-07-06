@@ -23,6 +23,7 @@ struct yildun_data {
 	PFVD_DEV_INFO pDev;
 	struct miscdevice miscdev;
 	struct device *dev;
+	int enabled;
 };
 
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
@@ -173,26 +174,25 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	struct yildun_data *data = container_of(filep->private_data, struct yildun_data, miscdev);
 	int ret = 0;
-	static int enabled;
 
 	switch (cmd) {
 	case IOCTL_YILDUN_ENABLE:
 		pr_debug("IOCTL_YILDUN_ENABLE\n");
-		if (!enabled) {
+		if (!data->enabled) {
 			data->pDev->pBSPFvdPowerUp(data->pDev);
 			ret = LoadFPGA(data->pDev);
 			if (ret)
 				data->pDev->pBSPFvdPowerDown(data->pDev);
 			else
-				enabled = TRUE;
+				data->enabled = TRUE;
 		}
 		break;
 
 	case IOCTL_YILDUN_DISABLE:
 		pr_debug("IOCTL_YILDUN_DISABLE\n");
-		if (enabled) {
+		if (data->enabled) {
 			data->pDev->pBSPFvdPowerDown(data->pDev);
-			enabled = FALSE;
+			data->enabled = FALSE;
 		}
 		break;
 
