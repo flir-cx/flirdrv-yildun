@@ -26,17 +26,10 @@ struct yildun_data {
 };
 
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
-static int open(struct inode *inode, struct file *filp);
 
 static PFVD_DEV_INFO pDev;
 static int __init init(void);
 static void deinit(void);
-
-static const struct file_operations yildun_fops = {
-	.owner = THIS_MODULE,
-	.unlocked_ioctl = ioctl,
-	.open = open,
-};
 
 /**
  * Yildun_Init
@@ -47,7 +40,6 @@ static const struct file_operations yildun_fops = {
 static int __init init(void)
 {
 	int retval = -1;
-	int i;
 
 	pr_info("Yildun Init\n");
 	// Allocate (and zero-initiate) our control structure.
@@ -55,24 +47,6 @@ static int __init init(void)
 	if (!pDev)
 		return -ENOMEM;
 
-	// Register linux driver
-	i = alloc_chrdev_region(&pDev->yildun_dev, 0, 1, "yildun");
-
-	if (i) {
-		pr_err("Error allocating chrdev region\n");
-		retval = -3;
-		goto OUT_NOCHRDEV;
-	}
-
-	cdev_init(&pDev->yildun_cdev, &yildun_fops);
-	pDev->yildun_cdev.owner = THIS_MODULE;
-	pDev->yildun_cdev.ops = &yildun_fops;
-	i = cdev_add(&pDev->yildun_cdev, pDev->yildun_dev, 1);
-	if (i) {
-		pr_err("Error adding device driver\n");
-		retval = -3;
-		goto OUT_NODEV;
-	}
 	pDev->pLinuxDevice = platform_device_alloc("yildun", 1);
 	if (pDev->pLinuxDevice == NULL) {
 		pr_err("Error adding allocating device\n");
@@ -135,10 +109,6 @@ OUT_PLATFORMDEVICEADD:
 OUT_PLATFORMDEVICEALLOC:
 	pDev->pBSPFvdPowerDown(pDev);
 OUT_NODEVALLOC:
-	cdev_del(&pDev->yildun_cdev);
-OUT_NODEV:
-	unregister_chrdev_region(pDev->yildun_dev, 1);
-OUT_NOCHRDEV:
 	kfree(pDev);
 	pDev = NULL;
 	return retval;
@@ -153,8 +123,6 @@ static void deinit(void)
 	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 	class_destroy(pDev->fvd_class);
 	platform_device_unregister(pDev->pLinuxDevice);
-	cdev_del(&pDev->yildun_cdev);
-	unregister_chrdev_region(pDev->yildun_dev, 1);
 	pDev->pCleanupGpio(pDev);
 	kfree(pDev);
 	pDev = NULL;
@@ -181,7 +149,7 @@ static int yildun_probe(struct platform_device *pdev)
 
 	data->dev = &pdev->dev;
 	data->miscdev.minor = MISC_DYNAMIC_MINOR;
-	data->miscdev.name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "yildun-misc");
+	data->miscdev.name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "yildun");
 	data->miscdev.fops = &yildun_misc_fops;
 	data->miscdev.parent = &pdev->dev;
 
@@ -221,19 +189,6 @@ static struct platform_driver yildun_driver = {
 	},
 };
 
-
-/**
- *  FVD_Open
- *
- * @param inode
- * @param filp
- *
- * @return
- */
-static int open(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
 
 /**
  * Yildun_IOControl
