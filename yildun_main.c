@@ -18,17 +18,17 @@
 #include <yildundev.h>
 #include <linux/dma-mapping.h>
 
-static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg);
-static int Yildun_Open(struct inode *inode, struct file *filp);
+static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
+static int open(struct inode *inode, struct file *filp);
 
 static PFVD_DEV_INFO pDev;
-static int __init Yildun_Init(void);
-static void Yildun_Deinit(void);
+static int __init init(void);
+static void deinit(void);
 
 static const struct file_operations yildun_fops = {
 	.owner = THIS_MODULE,
-	.unlocked_ioctl = Yildun_IOControl,
-	.open = Yildun_Open,
+	.unlocked_ioctl = ioctl,
+	.open = open,
 };
 
 /**
@@ -37,7 +37,7 @@ static const struct file_operations yildun_fops = {
  *
  * @return
  */
-static int __init Yildun_Init(void)
+static int __init init(void)
 {
 	int retval = -1;
 	int i;
@@ -141,7 +141,7 @@ OUT_NOCHRDEV:
  * Yildun_Deinit
  *
  */
-static void Yildun_Deinit(void)
+static void deinit(void)
 {
 	device_destroy(pDev->fvd_class, pDev->yildun_dev);
 	class_destroy(pDev->fvd_class);
@@ -161,7 +161,7 @@ static void Yildun_Deinit(void)
  *
  * @return
  */
-static int Yildun_Open(struct inode *inode, struct file *filp)
+static int open(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
@@ -175,7 +175,7 @@ static int Yildun_Open(struct inode *inode, struct file *filp)
  *
  * @return
  */
-static long Yildun_IOControl(struct file *filep, unsigned int cmd, unsigned long arg)
+static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
 	char *tmp;
@@ -237,8 +237,8 @@ OUT:
 	return ret;
 }
 
-module_init(Yildun_Init);
-module_exit(Yildun_Deinit);
+module_init(init);
+module_exit(deinit);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("FLIR Yildun FPGA loader");
