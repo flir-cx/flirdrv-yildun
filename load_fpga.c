@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "flir_kernel_os.h"
 #include "fpga.h"
-#include "fvdk_internal.h"
+#include "yildun_internal.h"
 #include "linux/spi/spi.h"
 #include "linux/firmware.h"
 #include <linux/platform_device.h>
@@ -32,9 +32,9 @@ PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 	int retval = 0;
 	char filename[] = FW_DIR FW_FILE;
 
-	retval = request_firmware(&pFW, filename, &pDev->pLinuxDevice->dev);
+	retval = request_firmware(&pFW, filename, pDev->dev);
 	if (retval) {
-		dev_err(&pDev->pLinuxDevice->dev, "Failed to get file %s\n", filename);
+		dev_err(pDev->dev, "Failed to get file %s\n", filename);
 		return NULL;
 	}
 
@@ -81,7 +81,7 @@ int CheckFPGA(PFVD_DEV_INFO pDev)
 			res = -ERROR_NO_INIT_OK;
 		else
 			res = -ERROR_NO_CONFIG_DONE;
-		dev_err(&pDev->pLinuxDevice->dev, "%s: FPGA load failed (%d)\n", __func__, res);
+		dev_err(pDev->dev, "%s: FPGA load failed (%d)\n", __func__, res);
 	}
 
 	return res;
@@ -116,16 +116,16 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	// read file
 	fpgaBin = getFPGAData(pDev, &isize, pDev->fpga);
 	if (fpgaBin == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "%s: Error reading fpgadata file\n", __func__);
+		dev_err(pDev->dev, "%s: Error reading fpgadata file\n", __func__);
 		retval = -ERROR_IO_DEVICE;
 		goto ERROR;
 	}
 
 	// Allocate a buffer suitable for DMA
 	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
-	buf = dma_alloc_coherent(&pDev->pLinuxDevice->dev, osize, &phy, GFP_DMA | GFP_KERNEL);
+	buf = dma_alloc_coherent(pDev->dev, osize, &phy, GFP_DMA | GFP_KERNEL);
 	if (!buf) {
-		dev_err(&pDev->pLinuxDevice->dev, "%s: Error allocating buf\n", __func__);
+		dev_err(pDev->dev, "%s: Error allocating buf\n", __func__);
 		retval = -ENOMEM;
 		goto ERROR;
 	}
@@ -169,7 +169,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	if (retval == 0) {
 		msleep_range(10, 20);
 		if (pDev->pPutInProgrammingMode(pDev) == 0) {
-			dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to set FPGA in programming mode\n", __func__);
+			dev_err(pDev->dev, "%s: Failed to set FPGA in programming mode\n", __func__);
 			retval = -ERROR_NO_SETUP;
 			goto ERROR;
 		}
@@ -178,13 +178,13 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	// Send FPGA code through SPI
 	pspim = spi_busnum_to_master(pDev->iSpiBus);
 	if (pspim == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to get SPI master\n", __func__);
+		dev_err(pDev->dev, "%s: Failed to get SPI master\n", __func__);
 		retval = -ERROR_NO_SPI;
 		goto ERROR;
 	}
 	pspid = spi_new_device(pspim, &chip);
 	if (pspid == NULL) {
-		dev_err(&pDev->pLinuxDevice->dev, "%s: Failed to set SPI device\n", __func__);
+		dev_err(pDev->dev, "%s: Failed to set SPI device\n", __func__);
 		retval = -ERROR_NO_SPI;
 		goto ERROR;
 	}
@@ -205,7 +205,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	retval = 0;
 ERROR:
 	if (buf)
-		dma_free_coherent(&pDev->pLinuxDevice->dev, osize, buf, phy);
+		dma_free_coherent(pDev->dev, osize, buf, phy);
 	freeFpgaData();
 	return retval;
 }

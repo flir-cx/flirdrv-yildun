@@ -31,7 +31,6 @@
 typedef struct __FVD_DEV_INFO {
 	// Linux driver variables
 	struct device *dev;
-	struct platform_device *pLinuxDevice;
 	struct cdev yildun_cdev;	// Linux character device
 	dev_t yildun_dev;		// Major.Minor device number
 	struct class *fvd_class;

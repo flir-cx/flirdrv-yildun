@@ -33,7 +33,7 @@ int SetupMX6S(PFVD_DEV_INFO pDev)
 
 BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 {
-	struct device *dev = &pDev->pLinuxDevice->dev;
+	struct device *dev = pDev->dev;
 	int ret;
 
 	dev->of_node = of_find_compatible_node(NULL, NULL, "flir,yildun");
@@ -130,11 +130,11 @@ BOOL SetupGpioAccessMX6S(PFVD_DEV_INFO pDev)
 	pinctrl_select_state(pDev->pinctrl, pDev->pins_sleep);
 
 	if (gpio_request(pDev->spi_sclk_gpio, "SPI2_SCLK"))
-		dev_err(&pDev->pLinuxDevice->dev, "SPI2_SCLK can not be requested\n");
+		dev_err(pDev->dev, "SPI2_SCLK can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_sclk_gpio);
 	if (gpio_request(pDev->spi_mosi_gpio, "SPI2_MOSI"))
-		dev_err(&pDev->pLinuxDevice->dev, "SPI2_MOSI can not be requested\n");
+		dev_err(pDev->dev, "SPI2_MOSI can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_mosi_gpio);
 
@@ -169,12 +169,12 @@ DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 
 	// Verify status
 	if (GetPinStatusMX6S(pDev)) {
-		dev_err(&pDev->pLinuxDevice->dev, "FPGA: Status not initially low\n");
+		dev_err(pDev->dev, "FPGA: Status not initially low\n");
 		return 0;
 	}
 
 	if (GetPinDoneMX6S(pDev)) {
-		dev_err(&pDev->pLinuxDevice->dev, "FPGA: Conf_Done not initially low\n");
+		dev_err(pDev->dev, "FPGA: Conf_Done not initially low\n");
 		return 0;
 	}
 	// Release config
@@ -190,7 +190,7 @@ DWORD PutInProgrammingModeMX6S(PFVD_DEV_INFO pDev)
 
 	// Verify status
 	if (!GetPinStatusMX6S(pDev)) {
-		dev_err(&pDev->pLinuxDevice->dev, "FPGA: Status not high when config released\n");
+		dev_err(pDev->dev, "FPGA: Status not high when config released\n");
 		return 0;
 	}
 
@@ -256,11 +256,11 @@ void BSPFvdPowerDownMX6S(PFVD_DEV_INFO pDev)
 
 	// Set SPI as input
 	if (gpio_request(pDev->spi_sclk_gpio, "SPI2_SCLK"))
-		dev_err(&pDev->pLinuxDevice->dev, "SPI2_SCLK can not be requested\n");
+		dev_err(pDev->dev, "SPI2_SCLK can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_sclk_gpio);
 	if (gpio_request(pDev->spi_mosi_gpio, "SPI2_MOSI"))
-		dev_err(&pDev->pLinuxDevice->dev, "SPI2_MOSI can not be requested\n");
+		dev_err(pDev->dev, "SPI2_MOSI can not be requested\n");
 	else
 		gpio_direction_input(pDev->spi_mosi_gpio);
 }

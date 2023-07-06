@@ -76,13 +76,13 @@ static int init(struct device *dev)
 
 	pr_info("Yildun Init\n");
 
-	data->pDev->pLinuxDevice->dev.dma_mask = devm_kmalloc(dev, sizeof(*data->pDev->pLinuxDevice->dev.dma_mask), GFP_KERNEL);
+	dev->dma_mask = devm_kmalloc(dev, sizeof(*dev->dma_mask), GFP_KERNEL);
 
-	if (!data->pDev->pLinuxDevice->dev.dma_mask)
+	if (!dev->dma_mask)
 		return -ENOMEM;
 
-	*data->pDev->pLinuxDevice->dev.dma_mask = DMA_BIT_MASK(32);
-	data->pDev->pLinuxDevice->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+	*dev->dma_mask = DMA_BIT_MASK(32);
+	dev->coherent_dma_mask = DMA_BIT_MASK(32);
 
 	retval = SetupMX6S(data->pDev);
 	if (retval) {
@@ -135,7 +135,6 @@ static int yildun_probe(struct platform_device *pdev)
 	if (!data->pDev)
 		return -ENOMEM;
 
-	data->pDev->pLinuxDevice = pdev;
 	data->pDev->dev = dev;
 
 	data->dev = dev;
