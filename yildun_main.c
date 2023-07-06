@@ -28,8 +28,8 @@ struct yildun_data {
 static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 static PFVD_DEV_INFO pDev;
-static int __init init(void);
-static void deinit(void);
+static int init(struct device *dev);
+static void deinit(struct device *dev);
 
 /**
  * Yildun_Init
@@ -37,8 +37,9 @@ static void deinit(void);
  *
  * @return
  */
-static int __init init(void)
+static int init(struct device *dev)
 {
+	struct yildun_data *data = dev_get_drvdata(dev);
 	int retval = -1;
 
 	pr_info("Yildun Init\n");
@@ -80,8 +81,9 @@ OUT_CLASSCREATE:
  * Yildun_Deinit
  *
  */
-static void deinit(void)
+static void deinit(struct device *dev)
 {
+	struct yildun_data *data = dev_get_drvdata(dev);
 	pDev->pCleanupGpio(pDev);
 }
 
@@ -95,7 +97,9 @@ static const struct file_operations yildun_misc_fops = {
 static int yildun_probe(struct platform_device *pdev)
 {
 	int ret;
-	struct yildun_data *data = devm_kzalloc(&pdev->dev, sizeof(struct yildun_data), GFP_KERNEL);
+	struct device *dev = &pdev->dev;
+
+	struct yildun_data *data = devm_kzalloc(dev, sizeof(struct yildun_data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
 
@@ -104,34 +108,35 @@ static int yildun_probe(struct platform_device *pdev)
 	/* if (!data->pDev) */
 	/* 	return -ENOMEM; */
 
-	data->dev = &pdev->dev;
+	data->dev = dev;
 	data->miscdev.minor = MISC_DYNAMIC_MINOR;
-	data->miscdev.name = devm_kasprintf(&pdev->dev, GFP_KERNEL, "yildun");
+	data->miscdev.name = devm_kasprintf(dev, GFP_KERNEL, "yildun");
 	data->miscdev.fops = &yildun_misc_fops;
-	data->miscdev.parent = &pdev->dev;
+	data->miscdev.parent = dev;
 
 	ret = misc_register(&data->miscdev);
 	if (ret) {
-		dev_err(&pdev->dev, "Failed to register miscdev for FVDK driver\n");
+		dev_err(dev, "Failed to register miscdev for FVDK driver\n");
 		//goto ERROR_MISC_REGISTER;
 	}
 
 	// Allocate (and zero-initiate) our control structure.
-	pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
+	pDev = (PFVD_DEV_INFO) devm_kzalloc(dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
 	if (!pDev)
 		return -ENOMEM;
 
 	pDev->pLinuxDevice = pdev;
-	pDev->dev = &pdev->dev;
-	return init();
+	pDev->dev = dev;
+	return init(dev);
 }
 
 static int yildun_remove(struct platform_device *pdev)
 {
 	struct yildun_data *data = platform_get_drvdata(pdev);
+	struct device *dev = &pdev->dev;
 
 	misc_deregister(&data->miscdev);
-	deinit();
+	deinit(dev);
 	return 0;
 }
 
