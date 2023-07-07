@@ -84,7 +84,7 @@ int CheckFPGA(PFVD_DEV_INFO pDev)
 			res = -ERROR_NO_CONFIG_DONE;
 		dev_err(pDev->dev, "%s: FPGA load failed (%d)\n", __func__, res);
 	}
-
+	dev_dbg(pDev->dev, "FPGA Successfully loaded\n");
 	return res;
 }
 
