@@ -111,10 +111,11 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	unsigned char *fpgaBin;
 	struct spi_master *pspim;
 	struct spi_device *pspid;
+	char fpgaheader[400];
 	ULONG *buf = 0;
 	dma_addr_t phy;
 	// read file
-	fpgaBin = getFPGAData(pDev, &isize, pDev->fpga);
+	fpgaBin = getFPGAData(pDev, &isize, fpgaheader);
 	if (fpgaBin == NULL) {
 		dev_err(pDev->dev, "%s: Error reading fpgadata file\n", __func__);
 		retval = -ERROR_IO_DEVICE;
@@ -131,7 +132,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	}
 
 	// swap bit and byte order
-	if (((GENERIC_FPGA_T *) (pDev->fpga))->LSBfirst) {
+	if (((GENERIC_FPGA_T *) (fpgaheader))->LSBfirst) {
 		ULONG *iptr = (ULONG *) fpgaBin;
 		ULONG *optr = buf;
 		int len = (isize + 3) / 4;

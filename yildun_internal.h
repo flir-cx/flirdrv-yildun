@@ -22,8 +22,8 @@ typedef struct __FVD_DEV_INFO {
 	// Linux driver variables
 	struct device *dev;
 
-	// FPGA header
-	char fpga[400];		// FPGA Header data buffer
+	/* // FPGA header */
+	/* char fpga[400];		// FPGA Header data buffer */
 
 	// CPU specific function pointers
 	BOOL(*pSetupGpioAccess) (struct __FVD_DEV_INFO * pDev);
