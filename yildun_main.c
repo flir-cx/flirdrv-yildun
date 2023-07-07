@@ -150,8 +150,8 @@ static int yildun_remove(struct platform_device *pdev)
 	struct yildun_data *data = platform_get_drvdata(pdev);
 	struct device *dev = &pdev->dev;
 
-	misc_deregister(&data->miscdev);
 	deinit(dev);
+	misc_deregister(&data->miscdev);
 	return 0;
 }
 
