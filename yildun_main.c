@@ -26,6 +26,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 struct yildun_data {
 	PFVD_DEV_INFO pDev;
+	FVD_DEV_INFO yildundev;
 	struct miscdevice miscdev;
 	struct device *dev;
 	int enabled;
@@ -128,13 +129,8 @@ static int yildun_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, data);
 
-	// Allocate (and zero-initiate) our control structure.
-	data->pDev = (PFVD_DEV_INFO) devm_kzalloc(&pdev->dev, sizeof(FVD_DEV_INFO), GFP_KERNEL);
-	if (!data->pDev)
-		return -ENOMEM;
-
+	data->pDev = &data->yildundev; 
 	data->pDev->dev = dev;
-
 	data->dev = dev;
 	data->miscdev.minor = MISC_DYNAMIC_MINOR;
 	data->miscdev.name = devm_kasprintf(dev, GFP_KERNEL, "yildun");
