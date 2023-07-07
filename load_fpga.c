@@ -178,7 +178,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	}
 
 	if ((retval = CheckFPGA(pDev)) != -ERROR_NO_CONFIG_DONE) {
-		dev_err(pDev->dev, "FPGA In unexpected state prior to programming mode (%i)\n", retval);
+		dev_err(pDev->dev, "FPGA In unexpected state after set to programming mode (%i)\n", retval);
 	}
 
 	// Send FPGA code through SPI
