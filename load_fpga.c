@@ -38,7 +38,7 @@ PUCHAR get_fpga_data(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 		return NULL;
 	}
 
-	pr_debug("Got %d bytes of firmware from %s\n", pFW->size, filename);
+	dev_dbg(pDev->dev, "Got %d bytes of firmware from %s\n", pFW->size, filename);
 
 	/* Read generic header */
 	if (pFW->size < sizeof(GENERIC_FPGA_T))

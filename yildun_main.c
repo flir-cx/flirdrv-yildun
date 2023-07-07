@@ -72,7 +72,7 @@ static int init(struct device *dev)
 	struct yildun_data *data = dev_get_drvdata(dev);
 	int retval = -1;
 
-	pr_info("Yildun Init\n");
+	dev_info(dev, "Yildun Init\n");
 
 	dev->dma_mask = devm_kmalloc(dev, sizeof(*dev->dma_mask), GFP_KERNEL);
 
@@ -84,17 +84,17 @@ static int init(struct device *dev)
 
 	retval = SetupMX6S(&data->yildundev);
 	if (retval) {
-		pr_err("Error initializing MX6S for Yildun\n");
+		dev_err(dev, "Error initializing MX6S for Yildun\n");
 		return retval;
 	}
 
 	if (!data->yildundev.pSetupGpioAccess) {
-		pr_err("Error creating Yildun class\n");
+		dev_err(dev, "Error creating Yildun class\n");
 		goto OUT_CLASSCREATE;
 	}
 
 	if (!data->yildundev.pSetupGpioAccess(&data->yildundev)) {
-		pr_err("Error setting up GPIO\n");
+		dev_err(dev, "Error setting up GPIO\n");
 		goto OUT_DEVICECREATE;
 	}
 
@@ -171,7 +171,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case IOCTL_YILDUN_ENABLE:
-		pr_debug("IOCTL_YILDUN_ENABLE\n");
+		dev_dbg(data->dev, "IOCTL_YILDUN_ENABLE\n");
 		if (!data->enabled) {
 			data->yildundev.pBSPFvdPowerUp(&data->yildundev);
 			ret = LoadFPGA(&data->yildundev);
@@ -183,7 +183,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 
 	case IOCTL_YILDUN_DISABLE:
-		pr_debug("IOCTL_YILDUN_DISABLE\n");
+		dev_dbg(data->dev, "IOCTL_YILDUN_DISABLE\n");
 		if (data->enabled) {
 			data->yildundev.pBSPFvdPowerDown(&data->yildundev);
 			data->enabled = FALSE;
@@ -196,7 +196,7 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	}
 
 	if (ret) {
-		pr_err("Yildun Ioctl %X failed: %d\n", cmd, ret);
+		dev_err(data->dev, "Yildun Ioctl %X failed: %d\n", cmd, ret);
 		goto OUT;
 	}
 
