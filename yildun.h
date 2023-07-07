@@ -10,7 +10,7 @@ int SetupMX6S(PFVD_DEV_INFO pDev);
 
 // Function prototypes for common FVD functions
 int LoadFPGA(PFVD_DEV_INFO pDev);
-PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *out_revision);
-void freeFpgaData(void);
+PUCHAR get_fpga_data(PFVD_DEV_INFO pDev, ULONG *size, char *out_revision);
+void free_fpga_data(PFVD_DEV_INFO pDev);
 
 #endif

@@ -25,7 +25,7 @@ static inline void msleep_range(unsigned long min, unsigned long max)
 }
 
 
-PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
+PUCHAR get_fpga_data(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 {
 	GENERIC_FPGA_T *pGen;
 	BXAB_FPGA_T *pSpec;
@@ -64,7 +64,7 @@ PUCHAR getFPGAData(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 	return ((PUCHAR) &pFW->data[sizeof(GENERIC_FPGA_T) + pGen->spec_size]);
 }
 
-void freeFpgaData(void)
+void free_fpga_data(PFVD_DEV_INFO pDev)
 {
 	if (pFW) {
 		release_firmware(pFW);
@@ -115,7 +115,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	ULONG *buf = 0;
 	dma_addr_t phy;
 	// read file
-	fpgaBin = getFPGAData(pDev, &isize, fpgaheader);
+	fpgaBin = get_fpga_data(pDev, &isize, fpgaheader);
 	if (fpgaBin == NULL) {
 		dev_err(pDev->dev, "%s: Error reading fpgadata file\n", __func__);
 		retval = -ERROR_IO_DEVICE;
@@ -205,8 +205,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 
 	retval = 0;
 ERROR:
-	if (buf)
-		dma_free_coherent(pDev->dev, osize, buf, phy);
-	freeFpgaData();
+	dma_free_coherent(pDev->dev, osize, buf, phy);
+	free_fpga_data(pDev);
 	return retval;
 }
