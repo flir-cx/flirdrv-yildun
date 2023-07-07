@@ -44,3 +44,14 @@ Improvments Ideas
   isn't programmed, so we know that the value changes
 
 - 
+
+Testing
+-------
+
+To test, I have loaded / unloaded the module manually and checking the dmesg log, using the following command
+
+rmmod yildun; dmesg -c >/dev/null; insmod yildun.ko; \
+echo "module yildun +p" >/sys/kernel/debug/dynamic_debug/control; \
+sleep 0.1; echo; dmesg; echo; \
+echo "Start test"; ./yildun_test; ./yildun_test_ioctl; echo; dmesg
+
