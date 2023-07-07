@@ -75,17 +75,13 @@ void free_fpga_data(PFVD_DEV_INFO pDev)
 
 int CheckFPGA(PFVD_DEV_INFO pDev)
 {
-	int res = ERROR_SUCCESS;
+	if (pDev->pGetPinDone(pDev))
+		return 0;
 
-	if (pDev->pGetPinDone(pDev) == 0) {
-		if (pDev->pGetPinStatus(pDev) == 0)
-			res = -ERROR_NO_INIT_OK;
-		else
-			res = -ERROR_NO_CONFIG_DONE;
-		dev_err(pDev->dev, "%s: FPGA load failed (%d)\n", __func__, res);
-	}
-	dev_dbg(pDev->dev, "FPGA Successfully loaded\n");
-	return res;
+	if (pDev->pGetPinStatus(pDev))
+		return -ERROR_NO_CONFIG_DONE;
+
+	return -ERROR_NO_INIT_OK;
 }
 
 struct spi_board_info chip = {
@@ -166,6 +162,10 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 		}
 	}
 
+	if ((retval = CheckFPGA(pDev)) != -ERROR_NO_INIT_OK) {
+		dev_err(pDev->dev, "FPGA In unexpected state prior to programming mode (%i)\n", retval);
+	}
+
 	// Put FPGA in programming mode
 	retval = pDev->pPutInProgrammingMode(pDev);
 	if (retval == 0) {
@@ -175,6 +175,10 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 			retval = -ERROR_NO_SETUP;
 			goto ERROR;
 		}
+	}
+
+	if ((retval = CheckFPGA(pDev)) != -ERROR_NO_CONFIG_DONE) {
+		dev_err(pDev->dev, "FPGA In unexpected state prior to programming mode (%i)\n", retval);
 	}
 
 	// Send FPGA code through SPI
@@ -199,10 +203,13 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 	device_unregister(&pspid->dev);
 	put_device(&pspim->dev);
 
+
 	if (CheckFPGA(pDev) != -ERROR_SUCCESS) {
 		retval = -1;
+		dev_err(pDev->dev, "FPGA Load failed\n");
 		goto ERROR;
 	}
+	dev_dbg(pDev->dev, "FPGA Load ok\n");
 
 	retval = 0;
 ERROR:
