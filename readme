@@ -50,8 +50,29 @@ Testing
 
 To test, I have loaded / unloaded the module manually and checking the dmesg log, using the following command
 
+cnt=0
+while true;
+do
+echo $cnt
+cnt=$(expr $cnt + 1)
 rmmod yildun; dmesg -c >/dev/null; insmod yildun.ko; \
 echo "module yildun +p" >/sys/kernel/debug/dynamic_debug/control; \
 sleep 0.1; echo; dmesg; echo; \
 echo "Start test"; ./yildun_test; ./yildun_test_ioctl; echo; dmesg
+done
+
+
+Test module load/unlaoding
+cnt=0;
+while true;
+do
+echo $cnt
+cnt=$(expr $cnt + 1)
+rmmod yildun
+echo "Removed"
+insmod yildun.ko
+dmesg -c
+echo "Inserted"
+sleep 0.1
+done
 
