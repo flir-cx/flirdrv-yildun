@@ -67,6 +67,7 @@ PUCHAR get_fpga_data(PFVD_DEV_INFO pDev, ULONG *size, char *pHeader)
 void free_fpga_data(PFVD_DEV_INFO pDev)
 {
 	if (pFW) {
+		dev_dbg(pDev->dev, "Releasing firmware data\n");
 		release_firmware(pFW);
 		pFW = NULL;
 	}
@@ -105,7 +106,6 @@ struct spi_board_info chip = {
  */
 int LoadFPGA(PFVD_DEV_INFO pDev)
 {
-	dev_err(0, "loadFPGA");
 	int retval = 0;
 	unsigned long isize, osize;
 	unsigned char *fpgaBin;
@@ -124,6 +124,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 
 	// Allocate a buffer suitable for DMA
 	osize = (isize + SPI_MIN) & ~(SPI_MIN-1);
+	dev_dbg(pDev->dev, "To allocate coherent buffer of size %lu \n", osize);
 	buf = dma_alloc_coherent(pDev->dev, osize, &phy, GFP_DMA | GFP_KERNEL);
 	if (!buf) {
 		dev_err(pDev->dev, "%s: Error allocating buf\n", __func__);
@@ -205,6 +206,7 @@ int LoadFPGA(PFVD_DEV_INFO pDev)
 
 	retval = 0;
 ERROR:
+	dev_dbg(pDev->dev, "Releasing  coherent buffer\n");
 	dma_free_coherent(pDev->dev, osize, buf, phy);
 	free_fpga_data(pDev);
 	return retval;
