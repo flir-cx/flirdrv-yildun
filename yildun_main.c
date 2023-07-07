@@ -175,10 +175,12 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		if (!data->enabled) {
 			data->yildundev.pBSPFvdPowerUp(&data->yildundev);
 			ret = LoadFPGA(&data->yildundev);
-			if (ret)
+			if (ret) {
 				data->yildundev.pBSPFvdPowerDown(&data->yildundev);
-			else
+				dev_err(data->dev, "Enable Yildun FPGA (IOCTL_YILDUN_ENABLE) failed: %d\n", ret);
+			} else {
 				data->enabled = TRUE;
+			}
 		}
 		break;
 
@@ -191,16 +193,11 @@ static long ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 
 	default:
+		dev_dbg(data->dev, "Yildun Ioctl %X Not supported\n", cmd);
 		ret = -ERROR_NOT_SUPPORTED;
 		break;
 	}
 
-	if (ret) {
-		dev_err(data->dev, "Yildun Ioctl %X failed: %d\n", cmd, ret);
-		goto OUT;
-	}
-
-OUT:
 	return ret;
 }
 
