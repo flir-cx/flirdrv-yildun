@@ -31,3 +31,14 @@ Deploying yildun module to camera
 The makefile contains the following deploy targets
 
 - deploy -- deploy yildun.ko to home directory of user on camera
+
+
+
+Verifying that FPGA was successfully loaded
+-------------------------------------------
+
+Currently, the CONF_DONE pin is verified after load
+to be right level to know that the FPGA has been loaded
+
+An improvment to this Is to check CONF_DONE also when the FPGA
+isnt programmed, so we know that the value changes
